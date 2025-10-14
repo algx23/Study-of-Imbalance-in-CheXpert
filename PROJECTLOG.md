@@ -23,8 +23,8 @@ Please regularly update this file to record your project progress. You should be
 
   - I will continue to read up on classification, continue to write up about what I have read, as this helps me to consolidate my learning, and prepares me well for the literature review/summary portion of the interim report. It also allows me to have a deeper understanding of the problem domain so I can think properly about which problem I will attempt to solve and the ways in which i go about it. I will also think about which dataset i want to use, as well as justifying why it is good, and begin to think more about my aims for the project, and my methodology in more depth.
 
-## Week 2 [w/c ...]
+## Week 2 [w/c 06.10.2025]
 
--
--
--
+- Last week I started to think about the problem statement that I wanted to write about. I decided on centering my project around designing, developing and evaluating a CNN Model despite class imbalance present in the dataset
+- I also seeked feedback from my supervisor about the research I had done in week 1
+- Last week I also decided on using the ChexPert dataset, and thought about the justification for this
