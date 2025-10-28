@@ -25,6 +25,17 @@ Please regularly update this file to record your project progress. You should be
 
 ## Week 2 [w/c 06.10.2025]
 
-- Last week I started to think about the problem statement that I wanted to write about. I decided on centering my project around designing, developing and evaluating a CNN Model despite class imbalance present in the dataset
+- I started to think about the problem statement that I wanted to write about. I decided on centering my project around designing, developing and evaluating a CNN Model despite class imbalance present in the dataset
 - I also seeked feedback from my supervisor about the research I had done in week 1
 - Last week I also decided on using the ChexPert dataset, and thought about the justification for this
+
+## Week 3 [w/c 13.10.2025]
+
+In this week I wrote the project log and thought more about my project objectives, and problem statement
+
+## Week 4 [w/c 20.10.25]
+
+- Last week I started to read papers about methods of augmenting data - https://doi.org/10.1186/s40537-019-0197-0
+  - This paper talks about the different types of data augmentation, such as flipping, cropping, rotations etc
+  - I also started reading this paper: https://doi.org/10.1016/j.neunet.2018.07.011 which talks about comparing methods of dealing with class imbalance
+- This week, (wc 28.10.2025) I will write up the summary of the second paper listed, and also review different feature extraction techniques, as suggested by my Supervisor, and prepare for a group meeting on 30.10.2025
