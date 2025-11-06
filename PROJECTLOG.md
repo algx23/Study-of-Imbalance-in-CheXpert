@@ -39,3 +39,11 @@ In this week I wrote the project log and thought more about my project objective
   - This paper talks about the different types of data augmentation, such as flipping, cropping, rotations etc
   - I also started reading this paper: https://doi.org/10.1016/j.neunet.2018.07.011 which talks about comparing methods of dealing with class imbalance
 - This week, (wc 28.10.2025) I will write up the summary of the second paper listed, and also review different feature extraction techniques, as suggested by my Supervisor, and prepare for a group meeting on 30.10.2025
+
+
+## Week 5 [w/c 27.10.2025]
+
+- I read a study about different sampling methods and how it affects model performance
+- I also had a meeting with my supervisor, for which I prepared a presentation, and presented my progress so far
+- As per feedback I will read some papers about intra-class variance and inter-class similarity, as it is also a problem I will have to deal with, as all images are chest X-rays and so are largely similar
+- Going forward I will also start planning how to write my interim report
