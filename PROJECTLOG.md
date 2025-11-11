@@ -47,3 +47,10 @@ In this week I wrote the project log and thought more about my project objective
 - I also had a meeting with my supervisor, for which I prepared a presentation, and presented my progress so far
 - As per feedback I will read some papers about intra-class variance and inter-class similarity, as it is also a problem I will have to deal with, as all images are chest X-rays and so are largely similar
 - Going forward I will also start planning how to write my interim report
+
+## Week 6 [w/c 3.11.2025]
+- In this week I started structuring my reading into different categories (augmentation/dealing with imbalance, papers detailing different CNNs and their performance on a variety of datasets, evaluation methods), so that they could be used for the interim report literature survey
+- I also thought about and made notes about the different Aims and Objectives of my project, and started making notes for the structure of my interim report
+- I also thought about the potential architecture for my CNN - 4-5 layers, with ReLu Activation functions and pooling layers
+- Found a paper comparing a model of CNNs with dropout, and without dropout [https://ieeexplore.ieee.org/abstract/document/9057809] so I also considered potentially using dropout in my CNN
+- During w/c 10.11.2025 (this log entry is written on 11.11.2025 retrospectively for w/c 3.11.2025) I will start writing the initial draft of the Interim Report, to hopefully finish by the end of the week and send to my supervisor for feedback
