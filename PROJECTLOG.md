@@ -54,3 +54,8 @@ In this week I wrote the project log and thought more about my project objective
 - I also thought about the potential architecture for my CNN - 4-5 layers, with ReLu Activation functions and pooling layers
 - Found a paper comparing a model of CNNs with dropout, and without dropout [https://ieeexplore.ieee.org/abstract/document/9057809] so I also considered potentially using dropout in my CNN
 - During w/c 10.11.2025 (this log entry is written on 11.11.2025 retrospectively for w/c 3.11.2025) I will start writing the initial draft of the Interim Report, to hopefully finish by the end of the week and send to my supervisor for feedback
+
+## Week 7 [w/C 10.11.2025]
+- During week 7, I started writing up my initial draft of the interim report
+- i finished it on thursday 13.11.2025, at which point i sent it to my supervisor for feedback
+- following the feeedback - that i also need to consider inter-class similarity, and intra-class variance -  I started improving it to address the feedback, which i am continuing to do in [w/c 17.11.2025]
