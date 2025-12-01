@@ -59,3 +59,6 @@ In this week I wrote the project log and thought more about my project objective
 - During week 7, I started writing up my initial draft of the interim report
 - i finished it on thursday 13.11.2025, at which point i sent it to my supervisor for feedback
 - following the feeedback - that i also need to consider inter-class similarity, and intra-class variance -  I started improving it to address the feedback, which i am continuing to do in [w/c 17.11.2025]
+
+## Week 8 [w/c 17.11.2025]
+- This week I Improved the interim report further, based off the feedback, and addeed a section about my methodology, and some expected outcomes, as my project does involve some experimentation and comparing resuts
