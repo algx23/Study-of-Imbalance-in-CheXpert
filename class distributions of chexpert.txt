@@ -1,0 +1,13 @@
+nofinding: 22.4k
+enlarged cardiomediastinum: 44.8k
+cardiomegaly: 46.2k
+lung opacity: 118k
+lung lesion: 11.9k
+edema: 86k
+consolidation: 70.6k
+pneumonia: 27.6k
+atelectasis: 68.4k
+pneumonothorax: 78k
+pleural effusion: 133k
+pleural other: 6492
+fracture: 12.2k
