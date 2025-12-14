@@ -62,3 +62,14 @@ In this week I wrote the project log and thought more about my project objective
 
 ## Week 8 [w/c 17.11.2025]
 - This week I Improved the interim report further, based off the feedback, and addeed a section about my methodology, and some expected outcomes, as my project does involve some experimentation and comparing resuts
+
+## Week 10 [w/c 1.12.2025]
+- This week I spent time downloading the dataset and studying the structure of the Train CSV
+- In the train CSV there are rows for each image, and each image has both a Frontal, and Lateral orientation
+- Each Disease can have 3 values: 1 (Positive - the image depicts the condition), 0 (negative - the image does not depict this class label), or -1 (the presence of this class label is uncertain)
+
+## Week 11 [w/c 8.12.2025]
+- This week I set up the initial project file for preprocessing images, and tested the environment works
+- I also set up google colab, with my VSCode, so that I can train models and develop, without a powerful dedicated GPU
+- Progress has been slower than expected, due to having other assignments due, however, now during the christmas break, I aim to get fully back on schedule
+- The plan for the next week, [w/c 15.12.2025] is to load the initial dataset, sample a subset and start to build the initial model.
