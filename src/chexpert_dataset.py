@@ -1,0 +1,42 @@
+import os
+import pandas as pd
+from torch.utils.data import Dataset
+from torchvision.io import decode_image
+from constants import LABELS
+
+class ChexpertDataset(Dataset):
+    """
+    Custom dataset for the ChexPert dataset.
+    This will be loaded into the DataLoader class
+
+    Stuff used to help:
+    - PyTorch Dataset Documentation: https://docs.pytorch.org/tutorials/beginner/basics/data_tutorial.html
+    - PyTorch DataLoader Documentation: https://docs.pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
+    - PyTorch decode_image Documentation to see what it did: https://docs.pytorch.org/vision/stable/generated/torchvision.io.decode_image.html#torchvision.io.decode_image
+    """
+    def __init__(self, subset_csv_dir, image_dir, transform=None, target_transform=None):
+        self.df = pd.read_csv(subset_csv_dir)
+        self.labels = self.df[LABELS] # all the columns with labels
+        self.image_dir = image_dir
+        self.transform = transform
+        self.target_transform = target_transform
+
+    def __len__(self):
+        """Returns the number of images in the dataset
+
+        Returns: int: number of images in the dataset
+        """
+        return len(self.labels)
+
+    def __getitem__(self, idx): # return an image and its labels for a specific index / row number
+        path_to_single_image = os.path.join(self.image_dir, self.df.loc[idx, "Path"])
+        image = decode_image(path_to_single_image)
+        label = self.labels.iloc[idx] # get all the label values for each image - each image is in its own row
+        if self.transform:
+            image = self.transform(image)
+        if self.target_transform:
+            label = self.target_transform(label)
+
+        label = label.to_numpy() # to address a error i got saying pytorch expects a numpy array rather than a pandas series
+        return image, label
+    
