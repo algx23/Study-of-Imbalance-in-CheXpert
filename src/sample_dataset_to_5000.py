@@ -1,22 +1,9 @@
 import pandas as pd
 import os
 from iterstrat.ml_stratifiers import MultilabelStratifiedShuffleSplit
+from constants import LABELS
 
 df = pd.read_csv("../train.csv")
-LABELS = ["No Finding",
-          "Enlarged Cardiomediastinum",
-          "Cardiomegaly",
-          "Lung Opacity",
-          "Lung Lesion",
-          "Edema",
-          "Consolidation",
-          "Pneumonia",
-          "Atelectasis",
-          "Pneumothorax",
-          "Pleural Effusion",
-          "Pleural Other",
-          "Fracture"
-          ]
 
 
 # replace the blank columns for each disease with 0s
