@@ -3,6 +3,7 @@ import pandas as pd
 from torch.utils.data import Dataset
 from torchvision.io import decode_image
 from constants import LABELS
+from torch import float32
 
 class ChexpertDataset(Dataset):
     """
@@ -32,6 +33,12 @@ class ChexpertDataset(Dataset):
         path_to_single_image = os.path.join(self.image_dir, self.df.loc[idx, "Path"])
         image = decode_image(path_to_single_image)
         label = self.labels.iloc[idx] # get all the label values for each image - each image is in its own row
+        #print(f"image type {image}")
+        image = image.to(dtype=float32) # got an error so fixed
+        # normalize image pixel values to between 0 and 1 initially,
+        # divide by 255 -> could use ToTensor, but decode_image already outputs a tensor
+        # so in the transform id need to do Tensor -> Numpy array for ToTensor -> back to Tensor which seems inefficient
+        image = image / 255 
         if self.transform:
             image = self.transform(image)
         if self.target_transform:

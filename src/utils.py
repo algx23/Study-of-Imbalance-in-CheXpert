@@ -8,8 +8,8 @@ def calculate_mean_and_standard_deviation(dataloader):
     get the mean pixel value, and standard deviation for the entire dataset
 
     References:
-    - https://www.youtube.com/watch?time_continue=359&v=y6IEcEBRZks&embeds_referring_euri=https%3A%2F%2Fwww.google.com%2Fsearch%3Fsca_esv%3Ddb2aaf917c165eff%26udm%3D7%26q%3Dwork%2Bout%2Bstandard%2Bdeviation%2Bpytorch%26sa%3DX%26ved%3D2ahUKEwja0LajisqRAxW&source_ve_path=MzY4NDIsMjM4NTE
-    - https://en.wikipedia.org/wiki/Standard_deviation to understand more where the formula used comes from
+        -  https://towardsdatascience.com/how-to-calculate-the-mean-and-standard-deviation-normalizing-datasets-in-pytorch-704bd7d05f4c/
+        - https://en.wikipedia.org/wiki/Standard_deviation to understand more where the formula used comes from
 
 
     Arguments: dataloader: the dataloader which contains the dataset
