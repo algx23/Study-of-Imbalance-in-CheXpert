@@ -33,7 +33,7 @@ class BaselineModel(nn.Module):
 
         # fully connected layer
     
-        self.fully_connected = nn.Linear(10816, 14 ) # 10,000 images, that have been flattened?
+        self.fully_connected = nn.Linear(10816, 14 )
 
 
     def forward(self, images):
