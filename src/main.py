@@ -3,7 +3,8 @@ from torch.utils.data import DataLoader
 from torchvision.transforms import Compose,Normalize, Resize # to resize all images
 from utils import calculate_mean_and_standard_deviation
 from model import BaselineModel 
-
+from torch.optim import Adam
+from torch.nn import BCEWithLogitsLoss
 def prepare_data():
 
     resize_transform = Resize((224, 224)) # some images are different sizes so resize them all to the same size
@@ -59,13 +60,44 @@ def prepare_data():
 
 
 def train_model(model, dataloader):
-   baseline_train = model
-   print(baseline_train)
-   return
+    # right now just 1 epoch as a check that it works
+    num_epochs = 1
+
+    baseline_train = model
+    loss_function = BCEWithLogitsLoss()
+    optimizer = Adam(model.parameters())
+
+    total_loss = 0
+    loss_so_far = 0
+
+
+    print(baseline_train)
+
+    for epoch in range(num_epochs):
+
+        current_batch_num = 0
+        model.train()
+        for i, data in enumerate(dataloader):
+            images, labels = data
+            optimizer.zero_grad()
+            outputs = baseline_train(images)
+            loss = loss_function(outputs, labels)
+            loss.backward()
+            optimizer.step()
+
+            total_loss += loss.item()
+            current_batch_num += 1
+            if i % 10  == 9: # print the loss every 10 batches
+                loss_so_far = total_loss / current_batch_num # avg loss up to current batch number
+                print(f"loss so far at batch {current_batch_num}: {loss_so_far}")
+
+        print(f"Epoch {epoch+1} complete. Final Avg Loss: {total_loss/current_batch_num}") # average loss across all batches
+    return model
+       
 
 if __name__ == "__main__":
     dataloader_for_training = prepare_data()
     model = BaselineModel()
 
     print("###############")
-    print(train_model(model, dataloader_for_training))
+    model_1_epoch_temp = train_model(model, dataloader_for_training)
