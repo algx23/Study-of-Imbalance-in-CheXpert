@@ -33,7 +33,7 @@ class BaselineModel(nn.Module):
 
         # fully connected layer
     
-        self.fully_connected = nn.Linear(10816, 14 )
+        self.fully_connected = nn.Linear(10816, 13 )
 
 
     def forward(self, images):
