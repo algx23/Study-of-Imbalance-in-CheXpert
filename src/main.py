@@ -1,10 +1,18 @@
+import torch
+
 from chexpert_dataset import ChexpertDataset
 from torch.utils.data import DataLoader
 from torchvision.transforms import Compose,Normalize, Resize # to resize all images
 from utils import calculate_mean_and_standard_deviation
+
 from model import BaselineModel 
 from torch.optim import Adam
 from torch.nn import BCEWithLogitsLoss
+from constants import NUM_EPOCHS
+
+import matplotlib.pyplot as plt
+from utils import plot_training_loss
+
 def prepare_data():
 
     resize_transform = Resize((224, 224)) # some images are different sizes so resize them all to the same size
@@ -61,21 +69,23 @@ def prepare_data():
 
 def train_model(model, dataloader):
     # right now just 1 epoch as a check that it works
-    num_epochs = 1
 
     baseline_train = model
     loss_function = BCEWithLogitsLoss()
     optimizer = Adam(model.parameters())
 
-    total_loss = 0
+    loss_to_plot = [] # list of loss values to plot
+    epoch_list = [] # corresponding epoch of each loss value during training
+
     loss_so_far = 0
 
 
     print(baseline_train)
 
-    for epoch in range(num_epochs):
+    for epoch in range(NUM_EPOCHS):
 
         current_batch_num = 0
+        total_loss_for_epoch = 0
         model.train()
         for i, data in enumerate(dataloader):
             images, labels = data
@@ -85,14 +95,25 @@ def train_model(model, dataloader):
             loss.backward()
             optimizer.step()
 
-            total_loss += loss.item()
+            total_loss_for_epoch += loss.item()
             current_batch_num += 1
-            if i % 10  == 9: # print the loss every 10 batches
-                loss_so_far = total_loss / current_batch_num # avg loss up to current batch number
+
+            if i % 50  == 49: # print the loss every 10 batches
+                loss_so_far = total_loss_for_epoch / current_batch_num # avg loss up to current batch number
                 print(f"loss so far at batch {current_batch_num}: {loss_so_far}")
 
-        print(f"Epoch {epoch+1} complete. Final Avg Loss: {total_loss/current_batch_num}") # average loss across all batches
-    return model
+        # after each epoch during training, add the epoch number and loss value
+        # to the list to be visualized
+
+        epoch_average_loss =  total_loss_for_epoch/(current_batch_num) # average loss total so far up to the current epoch
+        epoch_list.append(epoch+1)
+        loss_to_plot.append(epoch_average_loss)
+
+
+        print(f"Epoch {epoch+1} complete. Final Avg Loss for this epoch: {epoch_average_loss}") # average loss across all batches
+
+    print(f"training completed")
+    return (model, loss_to_plot, epoch_list)
        
 
 if __name__ == "__main__":
@@ -100,4 +121,9 @@ if __name__ == "__main__":
     model = BaselineModel()
 
     print("###############")
-    model_1_epoch_temp = train_model(model, dataloader_for_training)
+    post_train_model, losses, epochs = train_model(model, dataloader_for_training)
+    torch.save(post_train_model.state_dict(), "baseline_test.pt")
+    plot_training_loss(losses, epochs)
+
+    
+
