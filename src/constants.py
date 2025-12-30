@@ -12,3 +12,5 @@ LABELS = ["No Finding",
           "Pleural Other",
           "Fracture"
           ]
+
+NUM_EPOCHS = 5
