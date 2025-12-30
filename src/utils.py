@@ -1,7 +1,7 @@
 from torch import tensor, float32
 from math import sqrt
 import torch
-
+import matplotlib.pyplot as plt
 
 def calculate_mean_and_standard_deviation(dataloader):
     """
@@ -43,3 +43,12 @@ def calculate_mean_and_standard_deviation(dataloader):
     #print(mean, standard_deviation)
 
     return (mean, standard_deviation)
+
+def plot_training_loss(training_losses, epochs):
+    
+       plt.plot(epochs, training_losses)
+       plt.ylabel("Average Loss / epoch")
+       plt.xlabel("Number of epochs completed")
+       plt.savefig("training losses init")
+
+       return
