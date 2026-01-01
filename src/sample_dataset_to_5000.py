@@ -57,5 +57,26 @@ subset_df.to_csv("subset.csv", index=False)
 subset_mean = subset_df[LABELS].mean(axis=0) * 100
 print(f"class distribution after sampling: \n{subset_mean}")
 
+# splitting into validatation set for early stopping - 90/10
+paths_to_training_images = subset_df['Path']
+validation_split = MultilabelStratifiedShuffleSplit(n_splits=1, test_size=1000, random_state=0)
+
+for train_index, test_index in validation_split.split(paths_to_training_images, subset_df[LABELS].values):
+
+    X_train = paths_to_training_images.iloc[train_index] # stores the paths to the images - essentially the training images
+    X_train_val = paths_to_training_images.iloc[test_index]
+    Y_train = subset_df[LABELS].values[train_index] # stores the label values for each image, so x_train and y_train will line up
+    Y_train_val = subset_df[LABELS].values[test_index] 
+
+training_df = X_train.to_frame().reset_index(drop=True)
+training_df[LABELS] = pd.DataFrame(Y_train, columns=LABELS)
+
+validation_df = X_train_val.to_frame().reset_index(drop=True)
+validation_df[LABELS] = pd.DataFrame(Y_train_val, columns=LABELS)
+
+training_df.to_csv("train.csv", index=False)
+validation_df.to_csv("validation.csv", index=False)
 
 
+validation_mean = validation_df[LABELS].mean(axis=0) * 100
+print(f"class distribution after sampling: \n{round(validation_mean, 2)}")
