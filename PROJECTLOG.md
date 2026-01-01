@@ -71,5 +71,17 @@ In this week I wrote the project log and thought more about my project objective
 ## Week 11 [w/c 8.12.2025]
 - This week I set up the initial project file for preprocessing images, and tested the environment works
 - I also set up google colab, with my VSCode, so that I can train models and develop, without a powerful dedicated GPU
-- Progress has been slower than expected, due to having other assignments due, however, now during the christmas break, I aim to get fully back on schedule
+- Progress has been slower than expected, due to having other assignments due, however, now during the christmas break, I aim to get fully backon schedule
 - The plan for the next week, [w/c 15.12.2025] is to load the initial dataset, sample a subset and start to build the initial model.
+
+## Week 12 [w/c 15.12.2025]
+- This week I worked on preprocessing the dataset, to get it ready for training.
+- I sampled the cheXpert dataset, from 200k+ images, to a stratified subset of 10,000 images, so that it would be easier to train the models, while still being representative of the class distributions and imbalance in the original dataset
+- I spent time handling uncertainty labels, by initially deciding to make all labels with a value of -1 be 0
+- I also started working on normalizing images for the dataset, using the PyTorch Normalize function, for which I wrote a function to calculate the mean, and standard deviation of my subset, to bring all pixel values of images from the range [0, 255] to ~[-1.8, 1.8] for faster convergence, and to help prevent overfitting
+
+## Week 13 [w/c 22.12.2025]
+- I also continued to work on normalizing images, by applying the normalizations to
+  each image tensor in the dataloader
+- This week I worked on creating the intial structure for baseline model class for
+training, and also did some minor refactoring work on the main class

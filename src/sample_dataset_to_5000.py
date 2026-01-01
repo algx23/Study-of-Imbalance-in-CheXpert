@@ -40,7 +40,15 @@ for train_index, test_index in split.split(paths_to_images, df[LABELS].values):
 
 #print(type(X_train), type(Y_train))
 
-subset_df = X_train.to_frame()
+# when subsett-ing the data, there might be gaps in the row indexes in the numpy array
+# eg, one example might be from row 2222, but the next example taken as part of
+# the subset may be with index 2500
+# this caused some of the labels to be blank, as when pandas tries to match an image
+# to its labels, there is no corresponding label index for 2500 so pandas just makes it
+# blank
+# so i reset the indexes, so they both line up starting from 0
+# source: https://www.datacamp.com/tutorial/pandas-reset-index-tutorial
+subset_df = X_train.to_frame().reset_index(drop=True) # drop so the old indexes arent a column
 subset_df[LABELS] = pd.DataFrame(Y_train, columns=LABELS)
 
 subset_df.to_csv("subset.csv", index=False)
