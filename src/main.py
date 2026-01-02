@@ -1,3 +1,5 @@
+import os
+
 import torch
 from chexpert_dataset import ChexpertDataset
 from torch.utils.data import DataLoader
@@ -7,10 +9,13 @@ from utils import calculate_mean_and_standard_deviation
 from model import BaselineModel
 from torch.optim import Adam
 from torch.nn import BCEWithLogitsLoss
-from constants import NUM_EPOCHS
+from constants import NUM_EPOCHS, LABELS
 
 import matplotlib.pyplot as plt
 from utils import plot_training_loss
+
+from sklearn.metrics import multilabel_confusion_matrix, classification_report
+
 
 def prepare_data():
 
@@ -33,9 +38,9 @@ def prepare_data():
 
 
     ####### TEMP: Temporarily hard code mean and std during testing
-    mean, standard_deviation = calculate_mean_and_standard_deviation(dataset_loader)
-    #mean = 0.5062767267227173
-    #standard_deviation = 0.28674584034677253
+    #mean, standard_deviation = calculate_mean_and_standard_deviation(dataset_loader)
+    mean = 0.5062857270240784
+    standard_deviation = 0.2867498937006307
 
     print(f"mean = {mean}, standard deviation = {standard_deviation}")
 
@@ -114,12 +119,46 @@ def train_model(model, dataloader):
     print(f"training completed")
     return (model, loss_to_plot, epoch_list)
 
+def evaluate_model(model, test_data_loader):
+    loss_function = BCEWithLogitsLoss()
+    test_loss = 0
+    total_num_of_predictions = 0
+    number_of_correct_predictions = 0
+
+    model.eval()
+    with torch.no_grad():
+        count = 0
+        for i, data in enumerate(test_data_loader):
+            images, labels = data
+            outputs = model(images)
+            loss = loss_function(outputs, labels)
+            print(f"evaluation loss {loss.item()}")
+
+            predictions = (torch.sigmoid(outputs) > 0.5).int()
+            confusion_matrix = multilabel_confusion_matrix(labels.numpy(), predictions.numpy()) 
+            report = classification_report(labels.numpy(), predictions.numpy(), target_names=LABELS)
+            print(confusion_matrix)
+            print(report)
+            count += 1
+            if count == 2: # only for the first 2 batches just to check
+                return
+
 
 if __name__ == "__main__":
     dataloader_for_training = prepare_data()
+    
     model = BaselineModel()
+    if not os.path.exists('baseline_test.pt'):
+   
+        print("no previous models, training now")
+        post_train_model, losses, epochs = train_model(model, dataloader_for_training)
+
+        plot_training_loss(losses, epochs)
+        torch.save(post_train_model.state_dict(), "baseline_test.pt")
+    else:
+        print("previous models found!")
+        model.load_state_dict(torch.load("baseline_test.pt"))
+        post_train_model = model
 
     print("###############")
-    post_train_model, losses, epochs = train_model(model, dataloader_for_training)
-    torch.save(post_train_model.state_dict(), "baseline_test.pt")
-    plot_training_loss(losses, epochs)
+    confusion_matrix = evaluate_model(post_train_model, dataloader_for_training)
