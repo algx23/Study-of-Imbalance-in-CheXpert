@@ -1,20 +1,30 @@
 import os
+import pandas as pd
+
+from sample_dataset_to_5000 import create_subset_train_validation 
 
 import torch
 from chexpert_dataset import ChexpertDataset
 from torch.utils.data import DataLoader
 from torchvision.transforms import Compose,Normalize, Resize # to resize all images
-from utils import calculate_mean_and_standard_deviation
+from utils import calculate_mean_and_standard_deviation, calculate_class_weights
+
 
 from model import BaselineModel
 from torch.optim import Adam
 from torch.nn import BCEWithLogitsLoss
-from constants import NUM_EPOCHS, LABELS
+from constants import NUM_EPOCHS, LABELS, MODEL_NAME
 
 import matplotlib.pyplot as plt
 from utils import plot_training_loss
 
-from sklearn.metrics import multilabel_confusion_matrix, classification_report
+from pathlib import Path
+
+from sklearn.metrics import multilabel_confusion_matrix, classification_report, ConfusionMatrixDisplay
+import numpy as np
+
+# augmentation imports
+from torchvision.transforms import RandomRotation, RandomHorizontalFlip
 
 
 def prepare_data():
@@ -71,11 +81,11 @@ def prepare_data():
     return after_normalization_loader
 
 
-def train_model(model, dataloader):
+def train_model(model, dataloader, class_weights=None):
     # right now just 1 epoch as a check that it works
 
     baseline_train = model
-    loss_function = BCEWithLogitsLoss()
+    loss_function = BCEWithLogitsLoss(pos_weight=class_weights)
     optimizer = Adam(model.parameters())
 
     loss_to_plot = [] # list of loss values to plot
@@ -113,6 +123,13 @@ def train_model(model, dataloader):
         epoch_list.append(epoch+1)
         loss_to_plot.append(epoch_average_loss)
 
+        # add the losses to a file as logs
+        loss_file = Path(f"{MODEL_NAME}/train_data/avg_epoch_loss.txt")
+        loss_file.parent.mkdir(exist_ok=True, parents=True)
+        with open(loss_file, "w") as file:
+            for e, l in zip(epoch_list, loss_to_plot):
+                file.write(f"Epoch {e} loss: {l}\n")
+
 
         print(f"Epoch {epoch+1} complete. Final Avg Loss for this epoch: {epoch_average_loss}") # average loss across all batches
     
@@ -124,41 +141,67 @@ def evaluate_model(model, test_data_loader):
     test_loss = 0
     total_num_of_predictions = 0
     number_of_correct_predictions = 0
+    all_labels_across_batches = []
+    all_predictions_across_batches = []
 
     model.eval()
     with torch.no_grad():
-        count = 0
         for i, data in enumerate(test_data_loader):
             images, labels = data
             outputs = model(images)
             loss = loss_function(outputs, labels)
-            print(f"evaluation loss {loss.item()}")
+            print(f"evaluation loss for batch {i+1}: {loss.item()}")
 
             predictions = (torch.sigmoid(outputs) > 0.5).int()
-            confusion_matrix = multilabel_confusion_matrix(labels.numpy(), predictions.numpy()) 
-            report = classification_report(labels.numpy(), predictions.numpy(), target_names=LABELS)
-            print(confusion_matrix)
-            print(report)
-            count += 1
-            if count == 2: # only for the first 2 batches just to check
-                return
+
+            all_labels_across_batches.extend(labels.numpy())
+            all_predictions_across_batches.extend(predictions.numpy())
+
+
+    report = classification_report(y_true=all_labels_across_batches, y_pred=all_predictions_across_batches, target_names=LABELS, output_dict=True)
+    report_df = pd.DataFrame(report).transpose()
+    report_df.to_csv(f'{MODEL_NAME}/evaluation/classification_report.csv')
+
+
+    # save the report to a csv
+    
+    print(report)
+    confusion_matrix = multilabel_confusion_matrix(y_true=np.array(all_labels_across_batches), y_pred=np.array(all_predictions_across_batches))
+    for i in range(len(LABELS)): # print the confusion matrix for the first class
+        
+        #labels_in_cm = np.unique(np.concatenate((np.array(all_labels_across_batches), np.array(all_predictions_across_batches))))
+        #print(f"truth labels: {np.array(all_labels_across_batches).shape}")
+        #print(f'predictions: {np.array(all_predictions_across_batches).shape}')
+        #print(f'order of labels in the matrix: {labels_in_cm[0]}')
+        matrix_plot = ConfusionMatrixDisplay(confusion_matrix[i])
+        matrix_plot.plot()
+        matrix_filename = "confusion matrix " + LABELS[i]
+        matrix_plot.figure_.savefig(f"{MODEL_NAME}/evaluation/confusion matrixes/"+matrix_filename)
+
+    return 
 
 
 if __name__ == "__main__":
+    if not os.path.exists("subset.csv"):
+        print("subsetting data to create train and validation files")
+
     dataloader_for_training = prepare_data()
+    #class_weights = calculate_class_weights('train.csv')
     
     model = BaselineModel()
-    if not os.path.exists('baseline_test.pt'):
+    if not os.path.exists(f'{MODEL_NAME}.pt'):
    
         print("no previous models, training now")
         post_train_model, losses, epochs = train_model(model, dataloader_for_training)
 
         plot_training_loss(losses, epochs)
-        torch.save(post_train_model.state_dict(), "baseline_test.pt")
+        torch.save(post_train_model.state_dict(), f"{MODEL_NAME}.pt")
     else:
         print("previous models found!")
-        model.load_state_dict(torch.load("baseline_test.pt"))
+        model.load_state_dict(torch.load(f"{MODEL_NAME}.pt"))
         post_train_model = model
 
     print("###############")
-    confusion_matrix = evaluate_model(post_train_model, dataloader_for_training)
+    print('EVALUATION STARTING')
+    evaluate_model(post_train_model, dataloader_for_training)
+    print('confusion matrix generated successfully')
