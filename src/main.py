@@ -1,7 +1,8 @@
 import os
 import pandas as pd
+from datetime import datetime
 
-from sample_dataset_to_5000 import create_subset_train_validation 
+from sample_dataset_to_5000 import create_subset_train_validation, create_test_data_csv
 
 import torch
 from chexpert_dataset import ChexpertDataset
@@ -79,6 +80,27 @@ def prepare_data():
     print(f"label batch shape: {train_labels.size()}")
 
     return after_normalization_loader
+
+def prepare_test_data():
+    resize_transform = Resize((224, 224)) # some images are different sizes so resize them all to the same size
+    test_dataset = ChexpertDataset("prepared_test.csv", "D:/dataset fyp/", transform=resize_transform)
+
+    test_dataset_loader = DataLoader(test_dataset, batch_size=25, shuffle=True)
+
+    mean, standard_deviation = calculate_mean_and_standard_deviation(test_dataset_loader)
+    print(f"Test Mean: {mean}, Test STD: {standard_deviation}")
+
+
+    transforms = Compose([
+        resize_transform,
+        Normalize(mean=mean, std=standard_deviation)
+    ])
+
+    after_normalization_test_dataset = ChexpertDataset("prepared_test.csv", "D:/dataset fyp/", transform=transforms)
+    after_normalization_test_loader = DataLoader(after_normalization_test_dataset, batch_size=25, shuffle=True)
+
+    
+    return after_normalization_test_loader
 
 
 def train_model(model, dataloader, class_weights=None):
@@ -159,13 +181,17 @@ def evaluate_model(model, test_data_loader):
 
 
     report = classification_report(y_true=all_labels_across_batches, y_pred=all_predictions_across_batches, target_names=LABELS, output_dict=True)
-    report_df = pd.DataFrame(report).transpose()
-    report_df.to_csv(f'{MODEL_NAME}/evaluation/classification_report.csv')
-
 
     # save the report to a csv
+    report_df = pd.DataFrame(report).transpose()
     
+    report_path = Path(f'{MODEL_NAME}/evaluation/classification_report.csv')
+    report_path.parent.mkdir(exist_ok=True, parents=True)
+    
+    report_df.to_csv(report_path) 
     print(report)
+
+
     confusion_matrix = multilabel_confusion_matrix(y_true=np.array(all_labels_across_batches), y_pred=np.array(all_predictions_across_batches))
     for i in range(len(LABELS)): # print the confusion matrix for the first class
         
@@ -175,17 +201,28 @@ def evaluate_model(model, test_data_loader):
         #print(f'order of labels in the matrix: {labels_in_cm[0]}')
         matrix_plot = ConfusionMatrixDisplay(confusion_matrix[i])
         matrix_plot.plot()
+
+        # save the plots
         matrix_filename = "confusion matrix " + LABELS[i]
-        matrix_plot.figure_.savefig(f"{MODEL_NAME}/evaluation/confusion matrixes/"+matrix_filename)
+        matrix_filepath = Path(f"{MODEL_NAME}/evaluation/confusion matrixes/"+matrix_filename)
+        matrix_filepath.parent.mkdir(exist_ok=True, parents=True)
+        matrix_plot.figure_.savefig(matrix_filepath)
+        plt.close()
 
     return 
 
 
 if __name__ == "__main__":
+    print(f"START TIME {datetime.now()}")
     if not os.path.exists("subset.csv"):
         print("subsetting data to create train and validation files")
 
+
     dataloader_for_training = prepare_data()
+    if not os.path.exists("prepared_test.csv"):
+        print("creating test dataset now")
+        create_test_data_csv()
+    data_loader_for_testing = prepare_test_data()
     #class_weights = calculate_class_weights('train.csv')
     
     model = BaselineModel()
@@ -201,7 +238,8 @@ if __name__ == "__main__":
         model.load_state_dict(torch.load(f"{MODEL_NAME}.pt"))
         post_train_model = model
 
-    print("###############")
+
+    
     print('EVALUATION STARTING')
-    evaluate_model(post_train_model, dataloader_for_training)
-    print('confusion matrix generated successfully')
+    evaluate_model(post_train_model, data_loader_for_testing)
+    print(f"FINISH TIME {datetime.now()}")

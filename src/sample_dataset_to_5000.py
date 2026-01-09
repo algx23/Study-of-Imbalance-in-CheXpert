@@ -81,3 +81,16 @@ def create_subset_train_validation():
 
     validation_mean = validation_df[LABELS].mean(axis=0) * 100
     print(f"class distribution after sampling: \n{round(validation_mean, 2)}")
+
+    return
+
+def create_test_data_csv():
+    df = pd.read_csv("test.csv") 
+
+    df = df.drop(df[df["Frontal/Lateral"] == "Lateral"].index)
+
+    df.to_csv("prepared_test.csv", index=False)
+    return
+
+
+    
