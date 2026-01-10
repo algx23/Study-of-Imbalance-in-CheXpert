@@ -1,0 +1,54 @@
+from torch.nn import BCEWithLogitsLoss
+import torch
+import math
+
+
+class ValidationLossChecker():
+    def __init__(self, min_improvement, epochs_to_wait, validation_loader):
+        self.min_improvement = min_improvement
+        self.epochs_to_wait = epochs_to_wait
+        self.num_epochs_no_gain = 0
+
+        self.validation_loader = validation_loader
+
+        self.stop_early = False
+        self.best_loss = math.inf
+        self.loss_function = BCEWithLogitsLoss()
+
+    def compute_validation_loss(self, model):
+        model.eval()
+        with torch.no_grad():
+            total_loss = 0
+            for i, data in enumerate(self.validation_loader):
+                images, labels = data
+                outputs = model(images)
+                loss = self.loss_function(outputs, labels)
+                total_loss += loss.item()
+
+            loss_for_epoch = total_loss / len(self.validation_loader)
+
+        return loss_for_epoch
+
+    def check_for_no_improvement(self, model):
+        current_loss = self.compute_validation_loss(model)
+
+        # a better loss is lower than the current, by at least the min
+        # improvement amount
+        if current_loss < self.best_loss - self.min_improvement:
+            #print("WE FOUND A NEW LOSS")
+            self.best_loss = current_loss
+            # if there is a improvement, reset the counter
+            self.num_epochs_no_gain = 0
+        else: # not enough gain to constitute a new best loss
+            self.num_epochs_no_gain += 1
+
+        print(f"best loss {self.best_loss}, current loss: {current_loss}")
+        print(f"Epcohs without Improvement {self.num_epochs_no_gain} / 3")
+        return
+
+    def training_should_stop(self, model):
+        self.check_for_no_improvement(model)
+        if self.num_epochs_no_gain >= self.epochs_to_wait:
+            self.stop_early = True
+
+        return self.stop_early

@@ -15,6 +15,7 @@ from model import BaselineModel
 from torch.optim import Adam
 from torch.nn import BCEWithLogitsLoss
 from constants import NUM_EPOCHS, LABELS, MODEL_NAME
+from validation_loss_checker import ValidationLossChecker
 
 import matplotlib.pyplot as plt
 from utils import plot_training_loss
@@ -62,7 +63,8 @@ def prepare_data():
 
     after_normalization_train_dataset = ChexpertDataset("train.csv", "D:/dataset fyp/", transform=transforms)
     after_normalization_validation_dataset = ChexpertDataset("validation.csv", "D:/dataset fyp/", transform=transforms)
-    after_normalization_loader = DataLoader(after_normalization_train_dataset, batch_size=25, shuffle=True)
+    after_normalization_train_loader = DataLoader(after_normalization_train_dataset, batch_size=25, shuffle=True)
+    after_normalization_validation_loader = DataLoader(after_normalization_validation_dataset, batch_size=25, shuffle=True)
 
     # checking the after normalization dataset
     image, labels = after_normalization_train_dataset[0]
@@ -75,11 +77,11 @@ def prepare_data():
     print(f"labels: {labels.shape} || {labels}\n") # checking the labels exist properly for the image
 
     # # checking the data is loaded - from PyTorch DataLoader Documentation
-    train_features, train_labels = next(iter(after_normalization_loader))
+    train_features, train_labels = next(iter(after_normalization_train_loader))
     print(f"Feature shape: {train_features.size()} ")
     print(f"label batch shape: {train_labels.size()}")
 
-    return after_normalization_loader
+    return after_normalization_train_loader, after_normalization_validation_loader
 
 def prepare_test_data():
     resize_transform = Resize((224, 224)) # some images are different sizes so resize them all to the same size
@@ -103,10 +105,15 @@ def prepare_test_data():
     return after_normalization_test_loader
 
 
-def train_model(model, dataloader, class_weights=None):
+def train_model(model, train_dataloader, validation_dataloader, class_weights=None):
     # right now just 1 epoch as a check that it works
 
     baseline_train = model
+    validation_loss_checker = ValidationLossChecker(
+        min_improvement=5,
+        epochs_to_wait=3,
+        validation_loader = validation_dataloader
+    )
     loss_function = BCEWithLogitsLoss(pos_weight=class_weights)
     optimizer = Adam(model.parameters())
 
@@ -123,7 +130,7 @@ def train_model(model, dataloader, class_weights=None):
         current_batch_num = 0
         total_loss_for_epoch = 0
         model.train()
-        for i, data in enumerate(dataloader):
+        for i, data in enumerate(train_dataloader):
             images, labels = data
             optimizer.zero_grad()
             outputs = baseline_train(images)
@@ -140,10 +147,13 @@ def train_model(model, dataloader, class_weights=None):
 
         # after each epoch during training, add the epoch number and loss value
         # to the list to be visualized
-
         epoch_average_loss = total_loss_for_epoch/(current_batch_num) # average loss total so far up to the current epoch
         epoch_list.append(epoch+1)
         loss_to_plot.append(epoch_average_loss)
+
+        if validation_loss_checker.training_should_stop(model):
+            print(f"NOT ENOUGH IMPROVEMENT FOUND, STOPPING TRAINING")
+            break
 
         # add the losses to a file as logs
         loss_file = Path(f"{MODEL_NAME}/train_data/avg_epoch_loss.txt")
@@ -151,7 +161,6 @@ def train_model(model, dataloader, class_weights=None):
         with open(loss_file, "w") as file:
             for e, l in zip(epoch_list, loss_to_plot):
                 file.write(f"Epoch {e} loss: {l}\n")
-
 
         print(f"Epoch {epoch+1} complete. Final Avg Loss for this epoch: {epoch_average_loss}") # average loss across all batches
     
@@ -218,7 +227,8 @@ if __name__ == "__main__":
         print("subsetting data to create train and validation files")
 
 
-    dataloader_for_training = prepare_data()
+    dataloader_for_training = prepare_data()[0]
+    data_loader_for_validation = prepare_data()[1]
     if not os.path.exists("prepared_test.csv"):
         print("creating test dataset now")
         create_test_data_csv()
@@ -229,13 +239,13 @@ if __name__ == "__main__":
     if not os.path.exists(f'{MODEL_NAME}.pt'):
    
         print("no previous models, training now")
-        post_train_model, losses, epochs = train_model(model, dataloader_for_training)
+        post_train_model, losses, epochs = train_model(model, dataloader_for_training, data_loader_for_validation)
 
         plot_training_loss(losses, epochs)
-        torch.save(post_train_model.state_dict(), f"{MODEL_NAME}.pt")
+        torch.save(post_train_model.state_dict(), f"{MODEL_NAME}/{MODEL_NAME}.pt")
     else:
         print("previous models found!")
-        model.load_state_dict(torch.load(f"{MODEL_NAME}.pt"))
+        model.load_state_dict(torch.load(f"{MODEL_NAME}/{MODEL_NAME}.pt"))
         post_train_model = model
 
 
