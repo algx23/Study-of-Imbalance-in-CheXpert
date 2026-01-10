@@ -3,6 +3,9 @@ from math import sqrt
 import torch
 import matplotlib.pyplot as plt
 
+import pandas as pd
+from constants import LABELS, MODEL_NAME
+
 def calculate_mean_and_standard_deviation(dataloader):
     """
     get the mean pixel value, and standard deviation for the entire dataset
@@ -49,6 +52,20 @@ def plot_training_loss(training_losses, epochs):
        plt.plot(epochs, training_losses)
        plt.ylabel("Average Loss / epoch")
        plt.xlabel("Number of epochs completed")
-       plt.savefig("training losses init")
+       plt.savefig(f'{MODEL_NAME}/{MODEL_NAME} training losses init')
 
        return
+
+def calculate_class_weights(train_file):
+    class_weights = []
+    train_csv = pd.read_csv(train_file)
+    for LABEL in LABELS:
+        num_positives = train_csv[LABEL].sum()
+        # weight = |negative samples| / |positive samples|
+        num_negatives = train_csv.shape[0] - num_positives
+        label_class_weight = num_negatives / num_positives
+
+        class_weights.append(label_class_weight)
+    print(class_weights)
+
+    return 
