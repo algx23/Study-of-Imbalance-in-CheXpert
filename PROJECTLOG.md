@@ -84,4 +84,14 @@ In this week I wrote the project log and thought more about my project objective
 - I also continued to work on normalizing images, by applying the normalizations to
   each image tensor in the dataloader
 - This week I worked on creating the intial structure for baseline model class for
-training, and also did some minor refactoring work on the main class
+  training, and also did some minor refactoring work on the main class
+
+## Week 14 [w/c 29.12.2025]
+- This week was a little slower due to me having exams the next week [w/c 5.1.2025] for which i spent most of my time
+- However I still made some progress on the project
+- During week I fixed a critical bug in my training data where some labels were fully blank due to row indexing issues in Pandas
+- I also focused more on testing the intial training of the model, and ensuring it would be ready for me to start the heavy experiment testing in the next few weeks
+- I tested model training over more than 1 epoch and added a simple evaluate_model function to generate a classification report
+- I also split the training set further into a validation set, of 1k images, meaning my train/validation split is 9000:1000
+- I created a function to visualize the training loss over time in a graph using matplotlib
+- I also started working on generating confusion matrices for each of the 13 classes
