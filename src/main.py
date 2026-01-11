@@ -2,13 +2,17 @@ import os
 import pandas as pd
 from datetime import datetime
 
-from sample_dataset_to_5000 import create_subset_train_validation, create_test_data_csv
+from sample_dataset_to_5000 import (create_subset_train_validation,
+                                    create_test_data_csv)
 
 import torch
 from chexpert_dataset import ChexpertDataset
 from torch.utils.data import DataLoader
 from torchvision.transforms import Compose,Normalize, Resize # to resize all images
-from utils import calculate_mean_and_standard_deviation, calculate_class_weights
+from utils import (calculate_mean_and_standard_deviation,
+                   calculate_class_weights,
+                   save_model,
+                   write_train_loss_to_file)
 
 
 from model import BaselineModel
@@ -106,12 +110,10 @@ def prepare_test_data():
 
 
 def train_model(model, train_dataloader, validation_dataloader, class_weights=None):
-    # right now just 1 epoch as a check that it works
 
-    baseline_train = model
     validation_loss_checker = ValidationLossChecker(
-        min_improvement=5,
-        epochs_to_wait=3,
+        min_improvement=0.1,
+        epochs_to_wait=10,
         validation_loader = validation_dataloader
     )
     loss_function = BCEWithLogitsLoss(pos_weight=class_weights)
@@ -123,7 +125,7 @@ def train_model(model, train_dataloader, validation_dataloader, class_weights=No
     loss_so_far = 0
 
 
-    print(baseline_train)
+    print(model)
 
     for epoch in range(NUM_EPOCHS):
 
@@ -133,7 +135,7 @@ def train_model(model, train_dataloader, validation_dataloader, class_weights=No
         for i, data in enumerate(train_dataloader):
             images, labels = data
             optimizer.zero_grad()
-            outputs = baseline_train(images)
+            outputs = model(images)
             loss = loss_function(outputs, labels)
             loss.backward()
             optimizer.step()
@@ -153,19 +155,17 @@ def train_model(model, train_dataloader, validation_dataloader, class_weights=No
 
         if validation_loss_checker.training_should_stop(model):
             print(f"NOT ENOUGH IMPROVEMENT FOUND, STOPPING TRAINING")
-            break
-
-        # add the losses to a file as logs
-        loss_file = Path(f"{MODEL_NAME}/train_data/avg_epoch_loss.txt")
-        loss_file.parent.mkdir(exist_ok=True, parents=True)
-        with open(loss_file, "w") as file:
-            for e, l in zip(epoch_list, loss_to_plot):
-                file.write(f"Epoch {e} loss: {l}\n")
+            write_train_loss_to_file(epoch_list, loss_to_plot)
+            print(validation_loss_checker.epoch_of_saved_model)
+            return(loss_to_plot, epoch_list)
 
         print(f"Epoch {epoch+1} complete. Final Avg Loss for this epoch: {epoch_average_loss}") # average loss across all batches
     
+    save_model(model)
+    write_train_loss_to_file(epoch_list, loss_to_plot)
     print(f"training completed")
-    return (model, loss_to_plot, epoch_list)
+    print(validation_loss_checker.epcoh_of_saved_model)
+    return (loss_to_plot, epoch_list)
 
 def evaluate_model(model, test_data_loader):
     loss_function = BCEWithLogitsLoss()
@@ -223,9 +223,16 @@ def evaluate_model(model, test_data_loader):
 
 if __name__ == "__main__":
     print(f"START TIME {datetime.now()}")
+
+    # make the parent folder all of the logs, images, model will go into
+    model_folder = Path(f"{MODEL_NAME}" )
+    model_folder.mkdir(exist_ok=True, parents=True)
+
     if not os.path.exists("subset.csv"):
         print("subsetting data to create train and validation files")
-
+        create_subset_train_validation()
+    else:
+        print("Train / Valid Subsets already created. Loader prep initializing..")
 
     dataloader_for_training = prepare_data()[0]
     data_loader_for_validation = prepare_data()[1]
@@ -236,20 +243,18 @@ if __name__ == "__main__":
     #class_weights = calculate_class_weights('train.csv')
     
     model = BaselineModel()
-    if not os.path.exists(f'{MODEL_NAME}.pt'):
-   
+    if not os.path.exists(f'{MODEL_NAME}/{MODEL_NAME}.pt'):
         print("no previous models, training now")
-        post_train_model, losses, epochs = train_model(model, dataloader_for_training, data_loader_for_validation)
+        losses, epochs = train_model(model, dataloader_for_training, data_loader_for_validation)
+        model.load_state_dict(torch.load(f"{MODEL_NAME}/{MODEL_NAME}.pt"))
 
         plot_training_loss(losses, epochs)
-        torch.save(post_train_model.state_dict(), f"{MODEL_NAME}/{MODEL_NAME}.pt")
     else:
         print("previous models found!")
         model.load_state_dict(torch.load(f"{MODEL_NAME}/{MODEL_NAME}.pt"))
-        post_train_model = model
 
+    post_train_model = model
 
-    
     print('EVALUATION STARTING')
     evaluate_model(post_train_model, data_loader_for_testing)
     print(f"FINISH TIME {datetime.now()}")

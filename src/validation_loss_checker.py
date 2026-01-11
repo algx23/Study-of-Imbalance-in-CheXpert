@@ -1,10 +1,13 @@
 from torch.nn import BCEWithLogitsLoss
 import torch
 import math
+from utils import save_model
 
 
 class ValidationLossChecker():
     def __init__(self, min_improvement, epochs_to_wait, validation_loader):
+        self.epoch_of_saved_model = 0
+
         self.min_improvement = min_improvement
         self.epochs_to_wait = epochs_to_wait
         self.num_epochs_no_gain = 0
@@ -39,6 +42,8 @@ class ValidationLossChecker():
             self.best_loss = current_loss
             # if there is a improvement, reset the counter
             self.num_epochs_no_gain = 0
+            save_model(model) # save the model with the best loss
+            self.epoch_of_saved_model += 1
         else: # not enough gain to constitute a new best loss
             self.num_epochs_no_gain += 1
 
