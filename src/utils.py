@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 
 import pandas as pd
 from constants import LABELS, MODEL_NAME
+from pathlib import Path
 
 def calculate_mean_and_standard_deviation(dataloader):
     """
@@ -47,12 +48,15 @@ def calculate_mean_and_standard_deviation(dataloader):
 
     return (mean, standard_deviation)
 
-def plot_training_loss(training_losses, epochs):
+def plot_loss(training_losses,validation_losses, epochs):
     
-       plt.plot(epochs, training_losses)
+       plt.plot(epochs, training_losses, label="Training Loss")
+       plt.plot(epochs, validation_losses, label="Validation Loss")
        plt.ylabel("Average Loss / epoch")
        plt.xlabel("Number of epochs completed")
-       plt.savefig(f'{MODEL_NAME}/{MODEL_NAME} training losses init')
+       plt.legend()
+       plt.title("Training and Validation losses over epochs")
+       plt.savefig(f'{MODEL_NAME}/{MODEL_NAME} loss graph')
 
        return
 
@@ -69,3 +73,18 @@ def calculate_class_weights(train_file):
     print(class_weights)
 
     return 
+
+
+def save_model(model):
+    torch.save(model.state_dict(), f"{MODEL_NAME}/{MODEL_NAME}.pt")
+    return
+
+def write_train_loss_to_file(epoch_list, loss_to_plot):
+    # add the losses to a file as logs
+    loss_file = Path(f"{MODEL_NAME}/train_data/avg_epoch_loss.txt")
+    loss_file.parent.mkdir(exist_ok=True, parents=True)
+    with open(loss_file, "w") as file:
+        for e, l in zip(epoch_list, loss_to_plot):
+            file.write(f"Epoch {e} loss: {l}\n")
+
+    return

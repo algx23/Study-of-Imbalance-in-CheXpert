@@ -22,7 +22,7 @@ from constants import NUM_EPOCHS, LABELS, MODEL_NAME
 from validation_loss_checker import ValidationLossChecker
 
 import matplotlib.pyplot as plt
-from utils import plot_training_loss
+from utils import plot_loss
 
 from pathlib import Path
 
@@ -93,7 +93,9 @@ def prepare_test_data():
 
     test_dataset_loader = DataLoader(test_dataset, batch_size=25, shuffle=True)
 
-    mean, standard_deviation = calculate_mean_and_standard_deviation(test_dataset_loader)
+    mean = 0.5062857270240784
+    standard_deviation = 0.2867498937006307
+    #mean, standard_deviation = calculate_mean_and_standard_deviation(test_dataset_loader)
     print(f"Test Mean: {mean}, Test STD: {standard_deviation}")
 
 
@@ -105,14 +107,13 @@ def prepare_test_data():
     after_normalization_test_dataset = ChexpertDataset("prepared_test.csv", "D:/dataset fyp/", transform=transforms)
     after_normalization_test_loader = DataLoader(after_normalization_test_dataset, batch_size=25, shuffle=True)
 
-    
     return after_normalization_test_loader
 
 
 def train_model(model, train_dataloader, validation_dataloader, class_weights=None):
 
     validation_loss_checker = ValidationLossChecker(
-        min_improvement=0.1,
+        min_improvement=0.001,
         epochs_to_wait=10,
         validation_loader = validation_dataloader
     )
@@ -156,16 +157,19 @@ def train_model(model, train_dataloader, validation_dataloader, class_weights=No
         if validation_loss_checker.training_should_stop(model):
             print(f"NOT ENOUGH IMPROVEMENT FOUND, STOPPING TRAINING")
             write_train_loss_to_file(epoch_list, loss_to_plot)
-            print(validation_loss_checker.epoch_of_saved_model)
-            return(loss_to_plot, epoch_list)
+            validation_losses = validation_loss_checker.current_losses
+            print(f"MODEL TO BE USED FROM EPOCH: {validation_loss_checker.epoch_of_saved_model}")
+            return(loss_to_plot, validation_losses, epoch_list)
 
         print(f"Epoch {epoch+1} complete. Final Avg Loss for this epoch: {epoch_average_loss}") # average loss across all batches
     
     save_model(model)
     write_train_loss_to_file(epoch_list, loss_to_plot)
+    validation_losses = validation_loss_checker.current_losses
     print(f"training completed")
-    print(validation_loss_checker.epcoh_of_saved_model)
-    return (loss_to_plot, epoch_list)
+    print(f"MODEL TO BE USED FROM EPOCH: {validation_loss_checker.epoch_of_saved_model}")
+
+    return (loss_to_plot, validation_losses, epoch_list)
 
 def evaluate_model(model, test_data_loader):
     loss_function = BCEWithLogitsLoss()
@@ -240,15 +244,14 @@ if __name__ == "__main__":
         print("creating test dataset now")
         create_test_data_csv()
     data_loader_for_testing = prepare_test_data()
-    #class_weights = calculate_class_weights('train.csv')
+    class_weights = calculate_class_weights('train.csv')
     
     model = BaselineModel()
     if not os.path.exists(f'{MODEL_NAME}/{MODEL_NAME}.pt'):
         print("no previous models, training now")
-        losses, epochs = train_model(model, dataloader_for_training, data_loader_for_validation)
+        train_losses, validation_losses, epochs = train_model(model, dataloader_for_training, data_loader_for_validation, class_weights)
         model.load_state_dict(torch.load(f"{MODEL_NAME}/{MODEL_NAME}.pt"))
-
-        plot_training_loss(losses, epochs)
+        plot_loss(train_losses, validation_losses, epochs)
     else:
         print("previous models found!")
         model.load_state_dict(torch.load(f"{MODEL_NAME}/{MODEL_NAME}.pt"))

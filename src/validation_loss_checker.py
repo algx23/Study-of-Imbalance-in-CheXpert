@@ -6,6 +6,7 @@ from utils import save_model
 
 class ValidationLossChecker():
     def __init__(self, min_improvement, epochs_to_wait, validation_loader):
+        self.current_losses = []
         self.epoch_of_saved_model = 0
 
         self.min_improvement = min_improvement
@@ -34,6 +35,7 @@ class ValidationLossChecker():
 
     def check_for_no_improvement(self, model):
         current_loss = self.compute_validation_loss(model)
+        self.current_losses.append(current_loss)
 
         # a better loss is lower than the current, by at least the min
         # improvement amount
@@ -48,7 +50,7 @@ class ValidationLossChecker():
             self.num_epochs_no_gain += 1
 
         print(f"best loss {self.best_loss}, current loss: {current_loss}")
-        print(f"Epcohs without Improvement {self.num_epochs_no_gain} / 3")
+        print(f"Epcohs without Improvement {self.num_epochs_no_gain} / {self.epochs_to_wait}")
         return
 
     def training_should_stop(self, model):
