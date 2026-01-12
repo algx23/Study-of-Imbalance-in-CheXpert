@@ -13,5 +13,5 @@ LABELS = ["No Finding",
           "Fracture"
           ]
 
-NUM_EPOCHS = 10
+NUM_EPOCHS = 60
 MODEL_NAME = "baseline_model_valid_loss_test"
