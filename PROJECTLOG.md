@@ -95,3 +95,18 @@ In this week I wrote the project log and thought more about my project objective
 - I also split the training set further into a validation set, of 1k images, meaning my train/validation split is 9000:1000
 - I created a function to visualize the training loss over time in a graph using matplotlib
 - I also started working on generating confusion matrices for each of the 13 classes
+
+## Week 15 [w/c 5.1.2026]
+- This week I started a little slowly, as I had an exam on 7.1.2026, however I made more progress afterwards
+- In this week I worked on logging the metrics for each experiment, so that when i run it, i have the results stored for comparison
+- I wrote the training and validation losses, which i worked on splitting last week, to files
+- I also implemented a ValidationLossChecker class, to compute the validation loss after each epoch
+
+- I also refactored my data-sampling script a little, to put the subset, train split, and vaidation split code into functions
+- I also integrated this into main.py, checking if the train/validation splits exist, and creating them if not
+- When I went to prepare the test dataset, I found that I could not access the official CheXpert test dataset easily, and it was also huge in terms of storage space
+- To tackle this, I decided to use the valid.csv, a 234 image set, as my test set. The original CheXpert paper has validation results for 5 classes, though they compared label policies, so I will still be able to carefully compare results in my dissertation.
+
+- I also worked on a baseline which would handle class imbalance, and plan to use this for all experiments - I created a function to calculate the class weights for each of the classes, and use this as the pos_weight parameter in the BCEWithLogitsLoss
+- This meant that the model would penalize mistakes on rare classes more heavily, and since weighted loss seems to be a standard part of any CNN, I figured it would be good for the baseline to include it, though I plan to run an experiment of the baseline with and without weighted loss as well
+- Towards the end of this week I ensured that the ValidationLossChecker would save the model with the lowest validation loss, and that this model would be used for evaluating the test set during the experiments.
