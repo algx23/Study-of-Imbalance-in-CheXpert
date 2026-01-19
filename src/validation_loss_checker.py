@@ -2,7 +2,11 @@ from torch.nn import BCEWithLogitsLoss
 import torch
 import math
 from utils import save_model
-
+from sklearn.metrics import precision_recall_curve, average_precision_score
+import numpy as np
+import matplotlib.pyplot as plt
+from constants import MODEL_NAME
+from pathlib import Path
 
 class ValidationLossChecker():
     def __init__(self, min_improvement, epochs_to_wait, validation_loader):
@@ -20,6 +24,7 @@ class ValidationLossChecker():
         self.loss_function = BCEWithLogitsLoss()
 
     def compute_validation_loss(self, model):
+        all_predictions, all_labels = [], []
         model.eval()
         with torch.no_grad():
             total_loss = 0
@@ -27,11 +32,36 @@ class ValidationLossChecker():
                 images, labels = data
                 outputs = model(images)
                 loss = self.loss_function(outputs, labels)
-                total_loss += loss.item()
+                total_loss += loss.item()                
 
             loss_for_epoch = total_loss / len(self.validation_loader)
 
         return loss_for_epoch
+
+    def plot_pr_curve(self, model):
+        all_predictions, all_labels = [], []
+        model.eval()
+        with torch.no_grad():
+            for i, data in enumerate(self.validation_loader):
+                images, labels = data
+                outputs = model(images)
+                predictions = torch.sigmoid(outputs)
+                all_predictions.extend(predictions.numpy())
+                all_labels.extend(labels.numpy())
+
+        for i in range(13):
+            precision, recall, thresholds = precision_recall_curve(np.array(all_labels)[:, i], np.array(all_predictions)[:, i])
+            plt.plot(recall, precision, label=f'Class {i}')
+
+        plt.xlabel('Recall')
+        plt.ylabel('Precision')
+        plt.legend()
+
+        plt_save_path = Path(f"{MODEL_NAME}/{MODEL_NAME}_pr_curve.png")
+        plt_save_path.parent.mkdir(exist_ok=True, parents=True)
+        plt.savefig(plt_save_path)
+        plt.clf()
+        return
 
     def check_for_no_improvement(self, model):
         current_loss = self.compute_validation_loss(model)
