@@ -57,6 +57,7 @@ def plot_loss(training_losses,validation_losses, epochs):
        plt.legend()
        plt.title("Training and Validation losses over epochs")
        plt.savefig(f'{MODEL_NAME}/{MODEL_NAME} loss graph')
+       plt.clf()
 
        return
 
