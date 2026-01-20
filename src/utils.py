@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from constants import LABELS, MODEL_NAME
 from pathlib import Path
+import csv
 
 def calculate_mean_and_standard_deviation(dataloader):
     """
@@ -80,12 +81,16 @@ def save_model(model):
     torch.save(model.state_dict(), f"{MODEL_NAME}/{MODEL_NAME}.pt")
     return
 
-def write_train_loss_to_file(epoch_list, loss_to_plot):
+def write_train_loss_to_file(epoch_list, loss_to_plot, validation_losses):
     # add the losses to a file as logs
-    loss_file = Path(f"{MODEL_NAME}/train_data/avg_epoch_loss.txt")
+    loss_file = Path(f"{MODEL_NAME}/train_data/avg_epoch_loss.csv")
     loss_file.parent.mkdir(exist_ok=True, parents=True)
-    with open(loss_file, "w") as file:
-        for e, l in zip(epoch_list, loss_to_plot):
-            file.write(f"Epoch {e} loss: {l}\n")
+
+    loss_headings = ["Epoch", "Train Loss", "Validation Loss"]
+    with open(loss_file, "w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(loss_headings)
+        for epoch, train_loss, val_loss in zip(epoch_list, loss_to_plot, validation_losses):
+            writer.writerow([epoch, train_loss, val_loss])
 
     return

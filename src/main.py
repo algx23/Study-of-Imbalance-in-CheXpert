@@ -122,7 +122,7 @@ def prepare_test_data():
 def train_model(model, train_dataloader, validation_dataloader, class_weights=None):
 
     validation_loss_checker = ValidationLossChecker(
-        min_improvement=0.001,
+        min_improvement=0.0001,
         epochs_to_wait=10,
         validation_loader = validation_dataloader
     )
@@ -165,8 +165,8 @@ def train_model(model, train_dataloader, validation_dataloader, class_weights=No
 
         if validation_loss_checker.training_should_stop(model):
             print(f"NOT ENOUGH IMPROVEMENT FOUND, STOPPING TRAINING")
-            write_train_loss_to_file(epoch_list, train_losses)
             validation_losses = validation_loss_checker.current_losses
+            write_train_loss_to_file(epoch_list, train_losses, validation_losses)
             print(f"MODEL TO BE USED FROM EPOCH: {validation_loss_checker.epoch_of_saved_model}")
 
             model.load_state_dict(torch.load(f"{MODEL_NAME}/{MODEL_NAME}.pt"))
@@ -177,8 +177,9 @@ def train_model(model, train_dataloader, validation_dataloader, class_weights=No
         print(f"Epoch {epoch+1} complete. Final Avg Loss for this epoch: {epoch_average_loss}") # average loss across all batches
     
     save_model(model)
-    write_train_loss_to_file(epoch_list, train_losses)
+
     validation_losses = validation_loss_checker.current_losses
+    write_train_loss_to_file(epoch_list, train_losses, validation_losses)
     print(f"training completed")
     print(f"MODEL TO BE USED FROM EPOCH: {validation_loss_checker.epoch_of_saved_model}")
 
