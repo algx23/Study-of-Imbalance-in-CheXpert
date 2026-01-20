@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 from datetime import datetime
+from experiment_utils.arg_parser import parse_arguments
 
 from sample_dataset_to_5000 import (create_subset_train_validation,
                                     create_test_data_csv)
@@ -240,6 +241,10 @@ def evaluate_model(model, test_data_loader):
 
 
 if __name__ == "__main__":
+    # Just a test to check the module loads correctly initially
+    parse_arguments()
+    exit()
+
     print(f"START TIME {datetime.now()}")
 
     # make the parent folder all of the logs, images, model will go into
