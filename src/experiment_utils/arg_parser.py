@@ -17,7 +17,7 @@ def parse_arguments():
 
     # a flag for each augmentation
     # Rotation, Horizontal Flip, Vertical Flip, Colour Jitter, CLAHE
-    parser.add_argument("--rotate", choices= [0, 5, 10, 15, 30, 45], default=5)
+    parser.add_argument("--rotate", type=int, choices= [0, 5, 10, 15, 30, 45], default=5)
     parser.add_argument("--vflip", type=float)
     parser.add_argument("--hflip", type=float)
     parser.add_argument("--jitter", action="store_true")
