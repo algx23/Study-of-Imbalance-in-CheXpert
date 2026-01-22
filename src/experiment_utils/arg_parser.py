@@ -33,5 +33,18 @@ def parse_arguments():
 
     print(args)
 
-    return
+    if args.rotate:
+        augments_for_experiment.append(RandomRotation(args.rotate))
+    if args.vflip:
+        augments_for_experiment.append(RandomVerticalFlip(args.vflip))
+    if args.hflip:
+        augments_for_experiment.append(RandomHorizontalFlip(args.hflip))
+    if args.jitter:
+        augments_for_experiment.append(ColorJitter())
+    if args.clahe: # TODO: CLAHE implementation with openCV
+        pass
+
+    print(augments_for_experiment)
+
+    return augments_for_experiment
 
