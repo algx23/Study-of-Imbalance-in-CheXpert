@@ -99,7 +99,7 @@ In this week I wrote the project log and thought more about my project objective
 ## Week 15 [w/c 5.1.2026]
 - This week I started a little slowly, as I had an exam on 7.1.2026, however I made more progress afterwards
 - In this week I worked on logging the metrics for each experiment, so that when i run it, i have the results stored for comparison
-- I wrote the training and validation losses, which i worked on splitting last week, to files
+- I wrote the training loss which i worked on plotting last week, and validation losses, to files
 - I also implemented a ValidationLossChecker class, to compute the validation loss after each epoch
 
 - I also refactored my data-sampling script a little, to put the subset, train split, and vaidation split code into functions
@@ -110,3 +110,10 @@ In this week I wrote the project log and thought more about my project objective
 - I also worked on a baseline which would handle class imbalance, and plan to use this for all experiments - I created a function to calculate the class weights for each of the classes, and use this as the pos_weight parameter in the BCEWithLogitsLoss
 - This meant that the model would penalize mistakes on rare classes more heavily, and since weighted loss seems to be a standard part of any CNN, I figured it would be good for the baseline to include it, though I plan to run an experiment of the baseline with and without weighted loss as well
 - Towards the end of this week I ensured that the ValidationLossChecker would save the model with the lowest validation loss, and that this model would be used for evaluating the test set during the experiments.
+
+## Week 16 [w/c 12.1.2026]
+- This week I made a little less progress than I thought, as I was unexpectedly busy during the week
+- However, I still made forward progress by for example, making the plot_loss function (renamed from plot_training_loss) to also plot the validation losses across each epoch, which would allow me to visualize how the model generalizes as it trains and also see at which epoch the model was best (i.e. validation loss doesn't improve for 10 epochs)
+- I also did some minor refactoring work, by reworking the loss file saving logic into a function, and adding a save_model function to save the model
+- In this week I also rectified a minor oversight where I was recalculating the mean and standard deviation for the test set. This was incorrect, as in reality, it is unlikely we have a big enough sample, or even all the data necessary to reliably calculate the mean/standard deviation. To fix this, I set the mean and standard deviation of the test data loader to be the same as the train data loader
+- Additionally, I changed the validation dataloader to not have any transforms/augmentations meaning it is a more realistic unseen set
