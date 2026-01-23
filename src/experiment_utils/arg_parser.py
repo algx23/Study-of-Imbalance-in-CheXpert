@@ -20,14 +20,13 @@ def parse_arguments():
     parser.add_argument("--rotate", type=int, choices= [0, 5, 10, 15, 30, 45], default=5)
     parser.add_argument("--vflip", type=float)
     parser.add_argument("--hflip", type=float)
-    parser.add_argument("--jitter", action="store_true")
+    parser.add_argument("--jitter", type=float, nargs=2)
     parser.add_argument("--clahe", action="store_true")
 
     args = parser.parse_args()
 
     if args.vflip is not None and (args.vflip < 0 or args.vflip > 1):
         raise ValueError("vflip argument must be a floating point number between 0, and 1")
-    
     if args.hflip is not None and (args.hflip < 0 or args.hflip > 1):
         raise ValueError("hflip argument must be a floating point number between 0, and 1")
 
@@ -40,11 +39,10 @@ def parse_arguments():
     if args.hflip:
         augments_for_experiment.append(RandomHorizontalFlip(args.hflip))
     if args.jitter:
-        augments_for_experiment.append(ColorJitter())
+        # since cheXpert images are grayscale, they do not have a hue or a saturation
+        augments_for_experiment.append(ColorJitter(brightness=args.jitter[0], contrast=args.jitter[1]))
     if args.clahe: # TODO: CLAHE implementation with openCV
-        pass
-
-    print(augments_for_experiment)
+        NotImplemented
 
     return augments_for_experiment
 

@@ -38,7 +38,7 @@ from torchvision.transforms import (RandomRotation,
                                     RandomHorizontalFlip)
 
 
-def prepare_data():
+def prepare_data(augment_transforms):
 
     resize_transform = Resize((224, 224)) # some images are different sizes so resize them all to the same size
     train_dataset = ChexpertDataset("train.csv", "D:/dataset fyp/", transform=resize_transform)
@@ -60,24 +60,23 @@ def prepare_data():
 
     ####### TEMP: Temporarily hard code mean and std during testing
     #mean, standard_deviation = calculate_mean_and_standard_deviation(dataset_loader)
-    mean = 0.5062857270240784
+    mean =0.5062857270240784
     standard_deviation = 0.2867498937006307
 
     print(f"mean = {mean}, standard deviation = {standard_deviation}")
 
-    transforms = Compose([
+    common_transforms = [
         resize_transform,
         Normalize(mean=mean, std=standard_deviation)
-    ])
+    ]
+    train_transforms = common_transforms + augment_transforms
 
-    validation_transforms = Compose([
-        resize_transform,
-        Normalize(mean=mean, std=standard_deviation)
-    ])
+    transforms = Compose(common_transforms)
+    train_transforms = Compose(train_transforms)
 
-    after_normalization_train_dataset = ChexpertDataset("train.csv", "D:/dataset fyp/", transform=transforms)
+    after_normalization_train_dataset = ChexpertDataset("train.csv", "D:/dataset fyp/", transform=train_transforms)
     after_normalization_train_loader = DataLoader(after_normalization_train_dataset, batch_size=25, shuffle=True)
-    after_normalization_validation_dataset = ChexpertDataset("validation.csv", "D:/dataset fyp/", transform=validation_transforms)
+    after_normalization_validation_dataset = ChexpertDataset("validation.csv", "D:/dataset fyp/", transform=transforms)
     after_normalization_validation_loader = DataLoader(after_normalization_validation_dataset, batch_size=25, shuffle=True)
 
     # checking the after normalization dataset
@@ -94,6 +93,7 @@ def prepare_data():
     train_features, train_labels = next(iter(after_normalization_train_loader))
     print(f"Feature shape: {train_features.size()} ")
     print(f"label batch shape: {train_labels.size()}")
+
 
     return after_normalization_train_loader, after_normalization_validation_loader
 
@@ -242,8 +242,7 @@ def evaluate_model(model, test_data_loader):
 
 if __name__ == "__main__":
     # Just a test to check the module loads correctly initially
-    parse_arguments()
-    exit()
+    augment_transforms = parse_arguments()
 
     print(f"START TIME {datetime.now()}")
 
@@ -257,12 +256,17 @@ if __name__ == "__main__":
     else:
         print("Train / Valid Subsets already created. Loader prep initializing..")
 
-    dataloader_for_training = prepare_data()[0]
-    data_loader_for_validation = prepare_data()[1]
     if not os.path.exists("prepared_test.csv"):
         print("creating test dataset now")
         create_test_data_csv()
+    dataloader_for_training, data_loader_for_validation = prepare_data(augment_transforms)
+
+    print(f"training transforms: {dataloader_for_training.dataset.transform}")
+    print(f"validation_transforms: {data_loader_for_validation.dataset.transform}")
+    exit()
+
     data_loader_for_testing = prepare_test_data()
+
     class_weights = calculate_class_weights('train.csv')
     
     model = BaselineModel()
