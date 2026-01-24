@@ -260,10 +260,8 @@ if __name__ == "__main__":
     if not os.path.exists("prepared_test.csv"):
         print("creating test dataset now")
         create_test_data_csv()
+
     dataloader_for_training, data_loader_for_validation = prepare_data(augment_transforms)
-
-    exit()
-
     data_loader_for_testing = prepare_test_data()
 
     class_weights = calculate_class_weights('train.csv')
