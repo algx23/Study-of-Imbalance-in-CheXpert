@@ -242,11 +242,12 @@ def evaluate_model(model, test_data_loader):
 
 if __name__ == "__main__":
     # Just a test to check the module loads correctly initially
-    augment_transforms = parse_arguments()
+    augment_transforms = parse_arguments()[1]
 
     print(f"START TIME {datetime.now()}")
 
     # make the parent folder all of the logs, images, model will go into
+    print(f"Evaluating Model {MODEL_NAME}")
     model_folder = Path(f"{MODEL_NAME}" )
     model_folder.mkdir(exist_ok=True, parents=True)
 
@@ -261,8 +262,6 @@ if __name__ == "__main__":
         create_test_data_csv()
     dataloader_for_training, data_loader_for_validation = prepare_data(augment_transforms)
 
-    print(f"training transforms: {dataloader_for_training.dataset.transform}")
-    print(f"validation_transforms: {data_loader_for_validation.dataset.transform}")
     exit()
 
     data_loader_for_testing = prepare_test_data()

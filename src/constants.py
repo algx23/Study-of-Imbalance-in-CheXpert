@@ -1,3 +1,5 @@
+from experiment_utils.arg_parser import parse_arguments
+
 LABELS = ["No Finding",
           "Enlarged Cardiomediastinum",
           "Cardiomegaly",
@@ -13,5 +15,5 @@ LABELS = ["No Finding",
           "Fracture"
           ]
 
-NUM_EPOCHS = 60
-MODEL_NAME = "baseline_model_valid_loss_test"
+NUM_EPOCHS = 20
+MODEL_NAME = parse_arguments()[0]

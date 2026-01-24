@@ -9,6 +9,8 @@ def parse_arguments():
     augments_for_experiment = []
 
     parser = ArgumentParser()
+    parser.add_argument("--name", required=True, type=str)
+
     # to specify if there is any augment
     parser.add_argument("--augment", "--aug", action="store_true")
 
@@ -32,6 +34,7 @@ def parse_arguments():
 
     print(args)
 
+
     if args.rotate:
         augments_for_experiment.append(RandomRotation(args.rotate))
     if args.vflip:
@@ -44,5 +47,5 @@ def parse_arguments():
     if args.clahe: # TODO: CLAHE implementation with openCV
         NotImplemented
 
-    return augments_for_experiment
+    return (args.name, augments_for_experiment)
 
