@@ -74,7 +74,7 @@ def calculate_class_weights(train_file):
         class_weights.append(label_class_weight)
     print(class_weights)
 
-    return 
+    return torch.tensor(class_weights)
 
 
 def save_model(model):
