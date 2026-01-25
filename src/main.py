@@ -74,6 +74,9 @@ def prepare_data(augment_transforms):
     transforms = Compose(common_transforms)
     train_transforms = Compose(train_transforms)
 
+    print(f"train transforms{train_transforms}")
+    print(f"valid transforms{transforms}")
+
     after_normalization_train_dataset = ChexpertDataset("train.csv", "D:/dataset fyp/", transform=train_transforms)
     after_normalization_train_loader = DataLoader(after_normalization_train_dataset, batch_size=25, shuffle=True)
     after_normalization_validation_dataset = ChexpertDataset("validation.csv", "D:/dataset fyp/", transform=transforms)
@@ -125,9 +128,11 @@ def train_model(model, train_dataloader, validation_dataloader, class_weights=No
     validation_loss_checker = ValidationLossChecker(
         min_improvement=0.0001,
         epochs_to_wait=10,
-        validation_loader = validation_dataloader
+        validation_loader = validation_dataloader,
+        class_weights=class_weights
     )
     loss_function = BCEWithLogitsLoss(pos_weight=class_weights)
+    print(f"Loss Weights: {loss_function.pos_weight}")
     optimizer = Adam(model.parameters(), lr=0.0001)
 
     train_losses = [] # list of loss values to plot
@@ -243,6 +248,8 @@ def evaluate_model(model, test_data_loader):
 if __name__ == "__main__":
     # Just a test to check the module loads correctly initially
     augment_transforms = parse_arguments()[1]
+    use_weights = parse_arguments()[2]
+    print(f"CLASS WEIGHTS USED {use_weights}")
 
     print(f"START TIME {datetime.now()}")
 
@@ -264,12 +271,12 @@ if __name__ == "__main__":
     dataloader_for_training, data_loader_for_validation = prepare_data(augment_transforms)
     data_loader_for_testing = prepare_test_data()
 
-    class_weights = calculate_class_weights('train.csv')
+    class_weights = calculate_class_weights('train.csv') if use_weights else None
     
     model = BaselineModel()
     if not os.path.exists(f'{MODEL_NAME}/{MODEL_NAME}.pt'):
         print("no previous models, training now")
-        train_losses, validation_losses, epochs = train_model(model, dataloader_for_training, data_loader_for_validation)
+        train_losses, validation_losses, epochs = train_model(model, dataloader_for_training, data_loader_for_validation, class_weights)
         model.load_state_dict(torch.load(f"{MODEL_NAME}/{MODEL_NAME}.pt"))
         plot_loss(train_losses, validation_losses, epochs)
     else:

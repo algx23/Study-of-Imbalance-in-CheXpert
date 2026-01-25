@@ -25,6 +25,7 @@ def parse_arguments():
     parser.add_argument("--jitter", type=float, nargs=2)
     parser.add_argument("--clahe", action="store_true")
 
+    use_weights = False
     args = parser.parse_args()
 
     if args.vflip is not None and (args.vflip < 0 or args.vflip > 1):
@@ -32,6 +33,8 @@ def parse_arguments():
     if args.hflip is not None and (args.hflip < 0 or args.hflip > 1):
         raise ValueError("hflip argument must be a floating point number between 0, and 1")
 
+    if args.class_weights:
+        use_weights = True
     print(args)
 
 
@@ -47,5 +50,5 @@ def parse_arguments():
     if args.clahe: # TODO: CLAHE implementation with openCV
         NotImplemented
 
-    return (args.name, augments_for_experiment)
+    return (args.name, augments_for_experiment, use_weights)
 

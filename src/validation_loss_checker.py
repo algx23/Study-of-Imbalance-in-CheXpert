@@ -9,7 +9,7 @@ from constants import MODEL_NAME
 from pathlib import Path
 
 class ValidationLossChecker():
-    def __init__(self, min_improvement, epochs_to_wait, validation_loader):
+    def __init__(self, min_improvement, epochs_to_wait, validation_loader, class_weights):
         self.current_losses = []
         self.epoch_of_saved_model = 0
 
@@ -21,7 +21,7 @@ class ValidationLossChecker():
 
         self.stop_early = False
         self.best_loss = math.inf
-        self.loss_function = BCEWithLogitsLoss()
+        self.loss_function = BCEWithLogitsLoss(class_weights)
 
     def compute_validation_loss(self, model):
         all_predictions, all_labels = [], []
