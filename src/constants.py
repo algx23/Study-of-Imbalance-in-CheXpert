@@ -15,5 +15,5 @@ LABELS = ["No Finding",
           "Fracture"
           ]
 
-NUM_EPOCHS = 20
+NUM_EPOCHS = 50
 MODEL_NAME = parse_arguments()[0]
