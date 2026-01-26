@@ -9,21 +9,29 @@ def parse_arguments():
     augments_for_experiment = []
 
     parser = ArgumentParser()
-    parser.add_argument("--name", required=True, type=str)
+    help_strings = {"name": "Specifies the name of the model. All figures, and metrics generated will use this as the file name",
+                    "class_weights": "if included class weights are calculated and used in Weighted BCE Loss",
+                    "rotate": "the angle x to rotate images by +- x degrees",
+                    "hflip": "horizontal flip: --hflip p : where p is the probability of an image being flipped",
+                    "vflip": "vertical flip: --vflip p : where p is the probability of an image being flipped",
+                    "jitter": "color jitter: adjust brightness and contrast by amount provided",
+                    "clahe": "if included, use Contrast Limited Histogram Equalization"
+                    }
+    parser.add_argument("--name", required=True, type=str, help=help_strings["name"])
 
     # to specify if there is any augment
     parser.add_argument("--augment", "--aug", action="store_true")
 
     # to specify if there is a class weight or not
-    parser.add_argument("--class_weights", action="store_true")
+    parser.add_argument("--class_weights", action="store_true", help=help_strings["class_weights"])
 
     # a flag for each augmentation
     # Rotation, Horizontal Flip, Vertical Flip, Colour Jitter, CLAHE
-    parser.add_argument("--rotate", type=int, choices= [0, 5, 10, 15, 30, 45], default=0)
-    parser.add_argument("--vflip", type=float)
-    parser.add_argument("--hflip", type=float)
-    parser.add_argument("--jitter", type=float, nargs=2)
-    parser.add_argument("--clahe", action="store_true")
+    parser.add_argument("--rotate", type=int, choices= [0, 5, 10, 15, 30, 45], default=0, help=help_strings["rotate"])
+    parser.add_argument("--vflip", type=float, help=help_strings["vflip"])
+    parser.add_argument("--hflip", type=float, help=help_strings["hflip"])
+    parser.add_argument("--jitter", type=float, nargs=2, help=help_strings["jitter"])
+    parser.add_argument("--clahe", action="store_true", help=help_strings["clahe"])
 
     use_weights = False
     args = parser.parse_args()
