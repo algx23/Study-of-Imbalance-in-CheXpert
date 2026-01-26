@@ -117,3 +117,15 @@ In this week I wrote the project log and thought more about my project objective
 - I also did some minor refactoring work, by reworking the loss file saving logic into a function, and adding a save_model function to save the model
 - In this week I also rectified a minor oversight where I was recalculating the mean and standard deviation for the test set. This was incorrect, as in reality, it is unlikely we have a big enough sample, or even all the data necessary to reliably calculate the mean/standard deviation. To fix this, I set the mean and standard deviation of the test data loader to be the same as the train data loader
 - Additionally, I changed the validation dataloader to not have any transforms/augmentations meaning it is a more realistic unseen set
+
+## Week 17 [w/c 19.1.2026]
+- This week I started by updating the ValidationLossChecker to plot the Precision-Recall curve for each of the 13 classes
+- When initially planning the project, I had just planned to have a separate branch for each experiment, and thought that I could just manually change the augmentations for each experiment
+- However, after some thought, I realised that this might hurt the validity of the experiments, as I could make a typo or mistake when using the augmentations.
+- Another consideration was time. If for example, I ran an experiment, and was away, and the experiment finished before I could get back, I would lose the "inbetween" time where no experiments ran.
+- To address this, I spent the week working on a argument parser, so that I can pass in flags to specify augmentations. These can then be put into a powershell script, and then left to run.
+- For example: py main.py --name baseline_model; py main.py --name baseline_model_with_class_weights --class_weights; py main.py --name baseline_with_class_weights_horizontal_flip --class_weights --hflip 0.5; etc
+
+- I also found some logic bugs, such as the calculate_class_weights function not returning the class weights, which i spent time fixing.
+- I also realized that the main files were getting rather large, and started planning a large refactor in the coming weeks
+- I believe that I am in a very good position to start running experiments towards the mid-end of [w/c 26.1.2026]. While this is a lot later than the initial, interim timeline, I believe the use of the flags and shell script to define the experiments will help me gain back a lot of time.
