@@ -51,7 +51,7 @@ class ChexpertDataset(Dataset):
             image = self.transform(image)
         if self.target_transform:
             label = self.target_transform(label)
-        image = image.to(dtype=float32) # got an error so fixed
+        #image = image.to(dtype=float32) # got an error so fixed
 
         label = label.to_numpy() # to address a error i got saying pytorch expects a numpy array rather than a pandas series
         return image, label
