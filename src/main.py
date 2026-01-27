@@ -69,7 +69,9 @@ def prepare_data(augment_transforms):
         resize_transform,
         Normalize(mean=mean, std=standard_deviation)
     ]
-    train_transforms = common_transforms + augment_transforms
+
+    augment_pos = len(common_transforms) // 2
+    train_transforms = common_transforms[:augment_pos] + augment_transforms + common_transforms[augment_pos:]
 
     transforms = Compose(common_transforms)
     train_transforms = Compose(train_transforms)
@@ -192,6 +194,13 @@ def train_model(model, train_dataloader, validation_dataloader, class_weights=No
     return (train_losses, validation_losses, epoch_list)
 
 def evaluate_model(model, test_data_loader):
+    # save prediction/ground truth tensors to file for future logging
+    tensor_save_path = Path(f"{MODEL_NAME}/evaluation/tensor_data")
+    tensor_save_path.mkdir(exist_ok=True,parents=True)
+
+    print("I REAHCED HERE")
+
+
     loss_function = BCEWithLogitsLoss()
     test_loss = 0
     total_num_of_predictions = 0
@@ -212,6 +221,10 @@ def evaluate_model(model, test_data_loader):
             all_labels_across_batches.extend(labels.numpy())
             all_predictions_across_batches.extend(predictions.numpy())
 
+
+
+    torch.save(all_labels_across_batches, f"{tensor_save_path}/truth_tensor.pt")
+    torch.save(all_predictions_across_batches, f"{tensor_save_path}/prediction_tensor.pt")
 
     report = classification_report(y_true=all_labels_across_batches, y_pred=all_predictions_across_batches, target_names=LABELS, output_dict=True)
 
