@@ -34,6 +34,7 @@ def parse_arguments():
     parser.add_argument("--clahe", action="store_true", help=help_strings["clahe"])
 
     use_weights = False
+    use_clahe = False
     args = parser.parse_args()
 
     if args.vflip is not None and (args.vflip < 0 or args.vflip > 1):
@@ -56,7 +57,7 @@ def parse_arguments():
         # since cheXpert images are grayscale, they do not have a hue or a saturation
         augments_for_experiment.append(ColorJitter(brightness=args.jitter[0], contrast=args.jitter[1]))
     if args.clahe: # TODO: CLAHE implementation with openCV
-        NotImplemented
+        use_clahe=True
 
-    return (args.name, augments_for_experiment, use_weights)
+    return (args.name, augments_for_experiment, use_weights, use_clahe)
 

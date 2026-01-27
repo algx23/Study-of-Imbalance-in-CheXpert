@@ -9,7 +9,8 @@ from sample_dataset_to_5000 import (create_subset_train_validation,
 import torch
 from chexpert_dataset import ChexpertDataset
 from torch.utils.data import DataLoader
-from torchvision.transforms import Compose,Normalize, Resize # to resize all images
+from torchvision.utils import save_image
+from torchvision.transforms import Compose,Normalize, Resize, ToTensor # to resize all images
 from utils import (calculate_mean_and_standard_deviation,
                    calculate_class_weights,
                    save_model,
@@ -32,13 +33,14 @@ from sklearn.metrics import (multilabel_confusion_matrix,
                              roc_auc_score,
                              ConfusionMatrixDisplay)
 import numpy as np
+from PIL import Image
 
 # augmentation imports
 from torchvision.transforms import (RandomRotation,
                                     RandomHorizontalFlip)
 
 
-def prepare_data(augment_transforms):
+def prepare_data(augment_transforms, use_clahe):
 
     resize_transform = Resize((224, 224)) # some images are different sizes so resize them all to the same size
     train_dataset = ChexpertDataset("train.csv", "D:/dataset fyp/", transform=resize_transform)
@@ -54,6 +56,11 @@ def prepare_data(augment_transforms):
     #print(f"image shape: {image.shape}\n image : {image}\n") # grayscale(1 channel) 224x224 image
     #print(f"labels: {labels.shape} || {labels}\n") # checking the labels exist properly for the image
 
+
+    # saving one image before and after transforms
+    before_transform_img, _ = train_dataset[0]
+    before_transform_img.save(f"{MODEL_NAME}/before.png")
+
     dataset_loader = DataLoader(train_dataset, batch_size=25, shuffle=True)
 
 
@@ -67,11 +74,12 @@ def prepare_data(augment_transforms):
 
     common_transforms = [
         resize_transform,
+        ToTensor(),
         Normalize(mean=mean, std=standard_deviation)
     ]
 
-    augment_pos = len(common_transforms) // 2
-    train_transforms = common_transforms[:augment_pos] + augment_transforms + common_transforms[augment_pos:]
+    # Resize -> [Augments] -> ToTensor and Normalize
+    train_transforms = [common_transforms[0]] + augment_transforms + common_transforms[1:]
 
     transforms = Compose(common_transforms)
     train_transforms = Compose(train_transforms)
@@ -79,7 +87,7 @@ def prepare_data(augment_transforms):
     print(f"train transforms{train_transforms}")
     print(f"valid transforms{transforms}")
 
-    after_normalization_train_dataset = ChexpertDataset("train.csv", "D:/dataset fyp/", transform=train_transforms)
+    after_normalization_train_dataset = ChexpertDataset("train.csv", "D:/dataset fyp/", transform=train_transforms, use_clahe=use_clahe)
     after_normalization_train_loader = DataLoader(after_normalization_train_dataset, batch_size=25, shuffle=True)
     after_normalization_validation_dataset = ChexpertDataset("validation.csv", "D:/dataset fyp/", transform=transforms)
     after_normalization_validation_loader = DataLoader(after_normalization_validation_dataset, batch_size=25, shuffle=True)
@@ -96,6 +104,7 @@ def prepare_data(augment_transforms):
 
     # # checking the data is loaded - from PyTorch DataLoader Documentation
     train_features, train_labels = next(iter(after_normalization_train_loader))
+    save_image(train_features[0], f"{MODEL_NAME}/after.png")
     print(f"Feature shape: {train_features.size()} ")
     print(f"label batch shape: {train_labels.size()}")
 
@@ -116,6 +125,7 @@ def prepare_test_data():
 
     transforms = Compose([
         resize_transform,
+        ToTensor(),
         Normalize(mean=mean, std=standard_deviation)
     ])
 
@@ -262,6 +272,7 @@ if __name__ == "__main__":
     # Just a test to check the module loads correctly initially
     augment_transforms = parse_arguments()[1]
     use_weights = parse_arguments()[2]
+    use_clahe = parse_arguments()[-1]
     print(f"CLASS WEIGHTS USED {use_weights}")
 
     print(f"START TIME {datetime.now()}")
@@ -281,7 +292,7 @@ if __name__ == "__main__":
         print("creating test dataset now")
         create_test_data_csv()
 
-    dataloader_for_training, data_loader_for_validation = prepare_data(augment_transforms)
+    dataloader_for_training, data_loader_for_validation = prepare_data(augment_transforms, use_clahe)
     data_loader_for_testing = prepare_test_data()
 
     class_weights = calculate_class_weights('train.csv') if use_weights else None
