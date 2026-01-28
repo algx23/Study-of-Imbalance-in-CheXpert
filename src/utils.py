@@ -72,7 +72,6 @@ def calculate_class_weights(train_file):
         label_class_weight = num_negatives / num_positives
 
         class_weights.append(label_class_weight)
-    #print(class_weights)
 
     return torch.tensor(class_weights)
 
