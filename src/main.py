@@ -214,21 +214,20 @@ def evaluate_model(model, test_data_loader):
     tensor_save_path = Path(f"{MODEL_NAME}/evaluation/tensor_data")
     tensor_save_path.mkdir(exist_ok=True,parents=True)
 
-    print("I REAHCED HERE")
-
-
     loss_function = BCEWithLogitsLoss()
     test_loss = 0
     total_num_of_predictions = 0
     number_of_correct_predictions = 0
     all_labels_across_batches = []
     all_predictions_across_batches = []
+    all_outputs = []
 
     model.eval()
     with torch.no_grad():
         for i, data in enumerate(test_data_loader):
             images, labels = data
             outputs = model(images)
+            all_outputs.extend(outputs.data.numpy())
             loss = loss_function(outputs, labels)
             print(f"evaluation loss for batch {i+1}: {loss.item()}")
 
@@ -242,6 +241,9 @@ def evaluate_model(model, test_data_loader):
     torch.save(all_labels_across_batches, f"{tensor_save_path}/truth_tensor.pt")
     torch.save(all_predictions_across_batches, f"{tensor_save_path}/prediction_tensor.pt")
 
+    logit_df = pd.DataFrame(all_outputs, columns=LABELS)
+    logit_df.to_csv(f"{MODEL_NAME}/evaluation/eval_logits.csv")
+
     report = classification_report(y_true=all_labels_across_batches, y_pred=all_predictions_across_batches, target_names=LABELS, output_dict=True)
 
     # save the report to a csv
@@ -253,14 +255,9 @@ def evaluate_model(model, test_data_loader):
     report_df.to_csv(report_path) 
     print(report)
 
-
     confusion_matrix = multilabel_confusion_matrix(y_true=np.array(all_labels_across_batches), y_pred=np.array(all_predictions_across_batches))
     for i in range(len(LABELS)): # print the confusion matrix for the first class
         
-        #labels_in_cm = np.unique(np.concatenate((np.array(all_labels_across_batches), np.array(all_predictions_across_batches))))
-        #print(f"truth labels: {np.array(all_labels_across_batches).shape}")
-        #print(f'predictions: {np.array(all_predictions_across_batches).shape}')
-        #print(f'order of labels in the matrix: {labels_in_cm[0]}')
         matrix_plot = ConfusionMatrixDisplay(confusion_matrix[i])
         matrix_plot.plot()
 
