@@ -75,7 +75,7 @@ def prepare_data(augment_transforms, use_clahe):
     common_transforms = [
         resize_transform,
         ToTensor(),
-        Normalize(mean=mean, std=standard_deviation)
+        #Normalize(mean=mean, std=standard_deviation)
     ]
 
     # Resize -> [Augments] -> ToTensor and Normalize
@@ -198,8 +198,14 @@ def train_model(model, train_dataloader, validation_dataloader, class_weights=No
 
     validation_losses = validation_loss_checker.current_losses
     write_train_loss_to_file(epoch_list, train_losses, validation_losses)
+
+    validation_loss_checker.plot_pr_curve(model)
+
     print(f"training completed")
-    print(f"MODEL TO BE USED FROM EPOCH: {validation_loss_checker.epoch_of_saved_model}")
+    # epoch_list[-1] shows the last epoch that was completed and epoch_of_saved_model actually shows the num of improvements
+    # so epoch_list[-1] - epoch_of_saved_model is the last epoch a model was saved
+    # TODO: rewrite/rename so this makes more sense
+    print(f"MODEL TO BE USED FROM EPOCH: {epoch_list[-1] - validation_loss_checker.epoch_of_saved_model}")
 
     return (train_losses, validation_losses, epoch_list)
 
@@ -263,7 +269,6 @@ def evaluate_model(model, test_data_loader):
         matrix_filepath = Path(f"{MODEL_NAME}/evaluation/confusion matrixes/"+matrix_filename)
         matrix_filepath.parent.mkdir(exist_ok=True, parents=True)
         matrix_plot.figure_.savefig(matrix_filepath)
-        plt.close()
 
     return 
 
