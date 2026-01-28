@@ -5,7 +5,7 @@ from utils import save_model
 from sklearn.metrics import precision_recall_curve, average_precision_score
 import numpy as np
 import matplotlib.pyplot as plt
-from constants import MODEL_NAME
+from constants import MODEL_NAME, LABELS, CHEXPERT_COMP_LABELS
 from pathlib import Path
 
 class ValidationLossChecker():
@@ -49,17 +49,38 @@ class ValidationLossChecker():
                 all_predictions.extend(predictions.numpy())
                 all_labels.extend(labels.numpy())
 
-        for i in range(13):
+
+        plt.figure(figsize=(10,6))
+        # plot all the labels
+        for i in range(len(LABELS)):
             precision, recall, thresholds = precision_recall_curve(np.array(all_labels)[:, i], np.array(all_predictions)[:, i])
-            plt.plot(recall, precision, label=f'Class {i}')
+            plt.plot(recall, precision, label=f'{LABELS[i]}')
+
+        
 
         plt.xlabel('Recall')
         plt.ylabel('Precision')
-        plt.legend()
+        plt.legend(bbox_to_anchor=(1.05, 1))
 
         plt_save_path = Path(f"{MODEL_NAME}/{MODEL_NAME}_pr_curve.png")
         plt_save_path.parent.mkdir(exist_ok=True, parents=True)
-        plt.savefig(plt_save_path)
+        plt.savefig(plt_save_path, bbox_inches="tight")
+        plt.clf()
+
+        # plot of only the competition labels
+        plt.figure(figsize=(10,6))
+        for i in range(len(LABELS)):
+            if LABELS[i] in CHEXPERT_COMP_LABELS:
+                precision, recall, thresholds = precision_recall_curve(np.array(all_labels)[:, i], np.array(all_predictions)[:, i])
+                plt.plot(recall, precision, label=f'{LABELS[i]}')
+
+        plt.xlabel('Recall')
+        plt.ylabel('Precision')
+        plt.legend(bbox_to_anchor=(1.05, 1))
+
+        plt_save_path = Path(f"{MODEL_NAME}/{MODEL_NAME}_comp_pr_curve.png")
+        plt_save_path.parent.mkdir(exist_ok=True, parents=True)
+        plt.savefig(plt_save_path, bbox_inches="tight")
         plt.clf()
         return
 

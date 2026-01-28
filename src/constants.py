@@ -15,5 +15,10 @@ LABELS = ["No Finding",
           "Fracture"
           ]
 
-NUM_EPOCHS = 50
+NUM_EPOCHS = 3 # for testing
 MODEL_NAME = parse_arguments()[0]
+CHEXPERT_COMP_LABELS = ["Atelectasis",
+                        "Cardiomegaly",
+                        "Consolidation",
+                        "Edema",
+                        "Pleural Effusion"]
