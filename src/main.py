@@ -75,7 +75,7 @@ def prepare_data(augment_transforms, use_clahe):
     common_transforms = [
         resize_transform,
         ToTensor(),
-        #Normalize(mean=mean, std=standard_deviation)
+        Normalize(mean=mean, std=standard_deviation)
     ]
 
     # Resize -> [Augments] -> ToTensor and Normalize
@@ -151,8 +151,6 @@ def train_model(model, train_dataloader, validation_dataloader, class_weights=No
     epoch_list = [] # corresponding epoch of each loss value during training
 
     loss_so_far = 0
-
-
     print(model)
 
     for epoch in range(NUM_EPOCHS):
@@ -272,9 +270,8 @@ def evaluate_model(model, test_data_loader):
 
 if __name__ == "__main__":
     # Just a test to check the module loads correctly initially
-    augment_transforms = parse_arguments()[1]
-    use_weights = parse_arguments()[2]
-    use_clahe = parse_arguments()[-1]
+    _, augment_transforms, use_weights, use_clahe, use_dropout = parse_arguments() 
+
     print(f"CLASS WEIGHTS USED {use_weights}")
 
     print(f"START TIME {datetime.now()}")
@@ -299,7 +296,8 @@ if __name__ == "__main__":
 
     class_weights = calculate_class_weights('train.csv') if use_weights else None
     
-    model = BaselineModel()
+    print(f"USE DROPOUT: {use_dropout}")
+    model = BaselineModel(use_dropout=use_dropout)
     if not os.path.exists(f'{MODEL_NAME}/{MODEL_NAME}.pt'):
         print("no previous models, training now")
         train_losses, validation_losses, epochs = train_model(model, dataloader_for_training, data_loader_for_validation, class_weights)

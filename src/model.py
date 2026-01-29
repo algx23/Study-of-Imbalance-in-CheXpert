@@ -21,7 +21,7 @@ class BaselineModel(nn.Module):
     - https://docs.pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
     - https://dingyan89.medium.com/calculating-parameters-of-convolutional-and-fully-connected-layers-with-keras-186590df36c6
     """
-    def __init__(self):
+    def __init__(self, use_dropout):
         super().__init__()
         # convolution layer 1: 3x3 filters, 32 filters
         self.conv_1 = nn.Conv2d(in_channels=1, out_channels=32, kernel_size=3, stride=2) 
@@ -29,6 +29,7 @@ class BaselineModel(nn.Module):
         self.max_pool_1 = nn.MaxPool2d(kernel_size=2, stride=2)
         self.max_pool_2 = nn.MaxPool2d(kernel_size=2, stride=2)
 
+        self.dropout = nn.Dropout(0.2) if use_dropout else None
         self.flatten = nn.Flatten()
 
         # fully connected layer
@@ -49,6 +50,10 @@ class BaselineModel(nn.Module):
         images = self.max_pool_1(images)
         # output: 111-2+2*0 / 2 + 1 = 55
 
+        # if dropout is enabled in the model use it
+        if self.dropout is not None:
+            images = self.dropout(images)
+
         # conv2 -> input shape = 55x55
         images = self.conv_2(images)
         # output = 55-3/2 + 1 = 27x27 images
@@ -57,6 +62,10 @@ class BaselineModel(nn.Module):
         #max pool 2 -> input image = 27x27
         images = self.max_pool_2(images)
         #output = 27-2*2(0)/2 + 1 =13x13 image
+
+        # if dropout is enabled in the model use it
+        if self.dropout is not None:
+            images = self.dropout(images)
 
         # flatten
         # input = all 13x13 output rfom the 64 filters
