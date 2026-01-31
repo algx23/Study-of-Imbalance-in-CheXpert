@@ -1,7 +1,12 @@
 from torch import tensor, float32
 from math import sqrt
 import torch
+import matplotlib.pyplot as plt
 
+import pandas as pd
+from constants import LABELS, MODEL_NAME
+from pathlib import Path
+import csv
 
 def calculate_mean_and_standard_deviation(dataloader):
     """
@@ -43,3 +48,48 @@ def calculate_mean_and_standard_deviation(dataloader):
     #print(mean, standard_deviation)
 
     return (mean, standard_deviation)
+
+def plot_loss(training_losses,validation_losses, epochs):
+    
+       plt.plot(epochs, training_losses, label="Training Loss")
+       plt.plot(epochs, validation_losses, label="Validation Loss")
+       plt.ylabel("Average Loss / epoch")
+       plt.xlabel("Number of epochs completed")
+       plt.legend()
+       plt.title("Training and Validation losses over epochs")
+       plt.savefig(f'{MODEL_NAME}/{MODEL_NAME}_loss_graph.png')
+       plt.clf()
+
+       return
+
+def calculate_class_weights(train_file):
+    class_weights = []
+    train_csv = pd.read_csv(train_file)
+    for LABEL in LABELS:
+        num_positives = train_csv[LABEL].sum()
+        # weight = |negative samples| / |positive samples|
+        num_negatives = train_csv.shape[0] - num_positives
+        label_class_weight = num_negatives / num_positives
+
+        class_weights.append(label_class_weight)
+
+    return torch.tensor(class_weights)
+
+
+def save_model(model):
+    torch.save(model.state_dict(), f"{MODEL_NAME}/{MODEL_NAME}.pt")
+    return
+
+def write_train_loss_to_file(epoch_list, loss_to_plot, validation_losses):
+    # add the losses to a file as logs
+    loss_file = Path(f"{MODEL_NAME}/train_data/avg_epoch_loss.csv")
+    loss_file.parent.mkdir(exist_ok=True, parents=True)
+
+    loss_headings = ["Epoch", "Train Loss", "Validation Loss"]
+    with open(loss_file, "w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(loss_headings)
+        for epoch, train_loss, val_loss in zip(epoch_list, loss_to_plot, validation_losses):
+            writer.writerow([epoch, train_loss, val_loss])
+
+    return
