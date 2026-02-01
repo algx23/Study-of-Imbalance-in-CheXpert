@@ -21,19 +21,21 @@ class BaselineModel(nn.Module):
     - https://docs.pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
     - https://dingyan89.medium.com/calculating-parameters-of-convolutional-and-fully-connected-layers-with-keras-186590df36c6
     """
-    def __init__(self, use_dropout):
+    def __init__(self, use_dropout, use_batch_norm):
         super().__init__()
         # convolution layer 1: 3x3 filters, 32 filters
-        self.conv_1 = nn.Conv2d(in_channels=1, out_channels=32, kernel_size=3, stride=2) 
-        self.conv_2 = nn.Conv2d(in_channels = 32, out_channels=64, kernel_size=3, stride=2)
+        self.bias = False if use_batch_norm else True
+        self.conv_1 = nn.Conv2d(in_channels=1, out_channels=32, kernel_size=3, stride=2, bias=self.bias) 
+        self.conv_2 = nn.Conv2d(in_channels = 32, out_channels=64, kernel_size=3, stride=2, bias=self.bias)
         self.max_pool_1 = nn.MaxPool2d(kernel_size=2, stride=2)
         self.max_pool_2 = nn.MaxPool2d(kernel_size=2, stride=2)
 
         self.dropout = nn.Dropout(0.2) if use_dropout else None
+        self.bn1 = nn.BatchNorm2d(num_features=32) if use_batch_norm else None
+        self.bn2 = nn.BatchNorm2d(num_features=64) if use_batch_norm else None
         self.flatten = nn.Flatten()
 
         # fully connected layer
-    
         self.fully_connected = nn.Linear(10816, 13 )
 
 
@@ -42,10 +44,14 @@ class BaselineModel(nn.Module):
        
         # input: 224x224, output shape = 224-3/2 + 1 = 111.0 with floor division
         images = self.conv_1(images)
+
+        if self.bn1 is not None:
+            images = self.bn1(images)
+
         # relu 1
         images = F.relu(images)
-        # max pool 1
 
+        # max pool 1
         # input: 111x111 from conv1
         images = self.max_pool_1(images)
         # output: 111-2+2*0 / 2 + 1 = 55
@@ -57,8 +63,13 @@ class BaselineModel(nn.Module):
         # conv2 -> input shape = 55x55
         images = self.conv_2(images)
         # output = 55-3/2 + 1 = 27x27 images
+
+        if self.bn2 is not None:
+            images = self.bn2(images)
+
         # relu 2
         images = F.relu(images)
+
         #max pool 2 -> input image = 27x27
         images = self.max_pool_2(images)
         #output = 27-2*2(0)/2 + 1 =13x13 image
@@ -71,6 +82,7 @@ class BaselineModel(nn.Module):
         # input = all 13x13 output rfom the 64 filters
         images = self.flatten(images)
         # output = 13 x 13 x 64filters = 10816
+
         images = self.fully_connected(images)
 
         return images

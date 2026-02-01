@@ -270,9 +270,10 @@ def evaluate_model(model, test_data_loader):
 
 if __name__ == "__main__":
     # Just a test to check the module loads correctly initially
-    _, augment_transforms, use_weights, use_clahe, use_dropout = parse_arguments() 
+    _, augment_transforms, use_weights, use_clahe, use_dropout, use_batch_norm = parse_arguments() 
 
     print(f"CLASS WEIGHTS USED {use_weights}")
+    print(f"BATCH NORM USED:  {use_batch_norm}")
 
     print(f"START TIME {datetime.now()}")
 
@@ -297,7 +298,7 @@ if __name__ == "__main__":
     class_weights = calculate_class_weights('train.csv') if use_weights else None
     
     print(f"USE DROPOUT: {use_dropout}")
-    model = BaselineModel(use_dropout=use_dropout)
+    model = BaselineModel(use_dropout=use_dropout, use_batch_norm=use_batch_norm)
     if not os.path.exists(f'{MODEL_NAME}/{MODEL_NAME}.pt'):
         print("no previous models, training now")
         train_losses, validation_losses, epochs = train_model(model, dataloader_for_training, data_loader_for_validation, class_weights)
