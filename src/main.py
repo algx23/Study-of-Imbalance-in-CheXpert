@@ -27,6 +27,14 @@ import matplotlib.pyplot as plt
 from utils import plot_loss
 
 from pathlib import Path
+from path_creator import (
+    setup_folders,
+    MODEL_ROOT,
+    TRAIN_DATA_PATH,
+    VALIDATION_DATA_PATH,
+    EVAL_DATA_PATH,
+    MATRIX_PATH
+)
 
 from sklearn.metrics import (multilabel_confusion_matrix,
                              classification_report,
@@ -59,7 +67,7 @@ def prepare_data(augment_transforms, use_clahe):
 
     # saving one image before and after transforms
     before_transform_img, _ = train_dataset[0]
-    before_transform_img.save(f"{MODEL_NAME}/before.png")
+    before_transform_img.save(f"{MODEL_ROOT}/before.png")
 
     dataset_loader = DataLoader(train_dataset, batch_size=25, shuffle=True)
 
@@ -104,7 +112,7 @@ def prepare_data(augment_transforms, use_clahe):
 
     # # checking the data is loaded - from PyTorch DataLoader Documentation
     train_features, train_labels = next(iter(after_normalization_train_loader))
-    save_image(train_features[0], f"{MODEL_NAME}/after.png")
+    save_image(train_features[0], f"{MODEL_ROOT}/after.png")
     print(f"Feature shape: {train_features.size()} ")
     print(f"label batch shape: {train_labels.size()}")
 
@@ -185,7 +193,7 @@ def train_model(model, train_dataloader, validation_dataloader, class_weights=No
             write_train_loss_to_file(epoch_list, train_losses, validation_losses)
             print(f"MODEL TO BE USED FROM EPOCH: {validation_loss_checker.epoch_of_saved_model}")
 
-            model.load_state_dict(torch.load(f"{MODEL_NAME}/{MODEL_NAME}.pt"))
+            model.load_state_dict(torch.load({MODEL_ROOT} / f"{MODEL_NAME}.pt"))
             validation_loss_checker.plot_pr_curve(model)
 
             return(train_losses, validation_losses, epoch_list)
@@ -240,16 +248,14 @@ def evaluate_model(model, test_data_loader):
     torch.save(all_predictions_across_batches, f"{tensor_save_path}/prediction_tensor.pt")
 
     logit_df = pd.DataFrame(all_outputs, columns=LABELS)
-    logit_df.to_csv(f"{MODEL_NAME}/evaluation/eval_logits.csv")
+    logit_df.to_csv(EVAL_DATA_PATH / "eval_logits.csv")
 
     report = classification_report(y_true=all_labels_across_batches, y_pred=all_predictions_across_batches, target_names=LABELS, output_dict=True)
 
     # save the report to a csv
     report_df = pd.DataFrame(report).transpose()
     
-    report_path = Path(f'{MODEL_NAME}/evaluation/classification_report.csv')
-    report_path.parent.mkdir(exist_ok=True, parents=True)
-    
+    report_path = EVAL_DATA_PATH / "classification_report.csv"
     report_df.to_csv(report_path) 
     print(report)
 
@@ -260,16 +266,14 @@ def evaluate_model(model, test_data_loader):
         matrix_plot.plot()
 
         # save the plots
-        matrix_filename = "confusion matrix " + LABELS[i]
-        matrix_filepath = Path(f"{MODEL_NAME}/evaluation/confusion matrixes/"+matrix_filename)
-        matrix_filepath.parent.mkdir(exist_ok=True, parents=True)
+        matrix_filepath = MATRIX_PATH / f"{LABELS[i]}_confusion_matrix"
         matrix_plot.figure_.savefig(matrix_filepath)
 
     return 
 
 
 if __name__ == "__main__":
-    # Just a test to check the module loads correctly initially
+    setup_folders()
     _, augment_transforms, use_weights, use_clahe, use_dropout, use_batch_norm = parse_arguments() 
 
     print(f"CLASS WEIGHTS USED {use_weights}")
@@ -279,9 +283,6 @@ if __name__ == "__main__":
 
     # make the parent folder all of the logs, images, model will go into
     print(f"Evaluating Model {MODEL_NAME}")
-    model_folder = Path(f"{MODEL_NAME}" )
-    model_folder.mkdir(exist_ok=True, parents=True)
-
     if not os.path.exists("subset.csv"):
         print("subsetting data to create train and validation files")
         create_subset_train_validation()
@@ -299,14 +300,15 @@ if __name__ == "__main__":
     
     print(f"USE DROPOUT: {use_dropout}")
     model = BaselineModel(use_dropout=use_dropout, use_batch_norm=use_batch_norm)
-    if not os.path.exists(f'{MODEL_NAME}/{MODEL_NAME}.pt'):
+
+    if not os.path.exists(f'{MODEL_ROOT}/{MODEL_NAME}.pt'):
         print("no previous models, training now")
         train_losses, validation_losses, epochs = train_model(model, dataloader_for_training, data_loader_for_validation, class_weights)
-        model.load_state_dict(torch.load(f"{MODEL_NAME}/{MODEL_NAME}.pt"))
+        model.load_state_dict(torch.load(MODEL_ROOT / f"{MODEL_NAME}.pt"))
         plot_loss(train_losses, validation_losses, epochs)
     else:
         print("previous models found!")
-        model.load_state_dict(torch.load(f"{MODEL_NAME}/{MODEL_NAME}.pt"))
+        model.load_state_dict(torch.load(MODEL_ROOT / f"{MODEL_NAME}.pt"))
 
     post_train_model = model
 

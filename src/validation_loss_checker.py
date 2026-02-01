@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from constants import MODEL_NAME, LABELS, CHEXPERT_COMP_LABELS
 from pathlib import Path
+from path_creator import VALIDATION_DATA_PATH
 
 class ValidationLossChecker():
     def __init__(self, min_improvement, epochs_to_wait, validation_loader, class_weights):
@@ -62,8 +63,7 @@ class ValidationLossChecker():
         plt.ylabel('Precision')
         plt.legend(bbox_to_anchor=(1.05, 1))
 
-        plt_save_path = Path(f"{MODEL_NAME}/{MODEL_NAME}_pr_curve.png")
-        plt_save_path.parent.mkdir(exist_ok=True, parents=True)
+        plt_save_path = f"{VALIDATION_DATA_PATH}/pr_curve.png"
         plt.savefig(plt_save_path, bbox_inches="tight")
         plt.clf()
 
@@ -78,8 +78,7 @@ class ValidationLossChecker():
         plt.ylabel('Precision')
         plt.legend(bbox_to_anchor=(1.05, 1))
 
-        plt_save_path = Path(f"{MODEL_NAME}/{MODEL_NAME}_comp_pr_curve.png")
-        plt_save_path.parent.mkdir(exist_ok=True, parents=True)
+        plt_save_path = f"{VALIDATION_DATA_PATH}/comp_pr_curve.png"
         plt.savefig(plt_save_path, bbox_inches="tight")
         plt.clf()
         return

@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 
 import pandas as pd
 from constants import LABELS, MODEL_NAME
+from path_creator import MODEL_ROOT, TRAIN_DATA_PATH
 from pathlib import Path
 import csv
 
@@ -57,7 +58,7 @@ def plot_loss(training_losses,validation_losses, epochs):
        plt.xlabel("Number of epochs completed")
        plt.legend()
        plt.title("Training and Validation losses over epochs")
-       plt.savefig(f'{MODEL_NAME}/{MODEL_NAME}_loss_graph.png')
+       plt.savefig(f'{MODEL_ROOT}/{MODEL_NAME}_loss_graph.png')
        plt.clf()
 
        return
@@ -77,13 +78,12 @@ def calculate_class_weights(train_file):
 
 
 def save_model(model):
-    torch.save(model.state_dict(), f"{MODEL_NAME}/{MODEL_NAME}.pt")
+    torch.save(model.state_dict(), f"{MODEL_ROOT}/{MODEL_NAME}.pt")
     return
 
 def write_train_loss_to_file(epoch_list, loss_to_plot, validation_losses):
     # add the losses to a file as logs
-    loss_file = Path(f"{MODEL_NAME}/train_data/avg_epoch_loss.csv")
-    loss_file.parent.mkdir(exist_ok=True, parents=True)
+    loss_file = f"{TRAIN_DATA_PATH}/avg_epoch_loss.csv"
 
     loss_headings = ["Epoch", "Train Loss", "Validation Loss"]
     with open(loss_file, "w", newline="") as file:
