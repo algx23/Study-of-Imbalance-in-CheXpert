@@ -22,3 +22,10 @@ CHEXPERT_COMP_LABELS = ["Atelectasis",
                         "Consolidation",
                         "Edema",
                         "Pleural Effusion"]
+
+IMAGES_PATH = "D:/dataset fyp/"
+ORIGINAL_DATASET_PATH = "../train.csv"
+SUBSET_PATH = "data/subset.csv"
+TRAIN_SET_PATH = "data/train.csv"
+VALIDATION_SET_PATH = "data/validation.csv"
+TEST_SET_PATH = "data/prepared_test.csv"

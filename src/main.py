@@ -3,8 +3,7 @@ import pandas as pd
 from datetime import datetime
 from experiment_utils.arg_parser import parse_arguments
 
-from sample_dataset_to_5000 import (create_subset_train_validation,
-                                    create_test_data_csv)
+from sample_dataset_to_5000 import DataSubsetter
 
 import torch
 from chexpert_dataset import ChexpertDataset
@@ -20,7 +19,17 @@ from utils import (calculate_mean_and_standard_deviation,
 from model import BaselineModel
 from torch.optim import Adam
 from torch.nn import BCEWithLogitsLoss
-from constants import NUM_EPOCHS, LABELS, MODEL_NAME
+from constants import (
+    NUM_EPOCHS,
+    LABELS,
+    MODEL_NAME,
+    IMAGES_PATH,
+    ORIGINAL_DATASET_PATH,
+    SUBSET_PATH,
+    TRAIN_SET_PATH,
+    VALIDATION_SET_PATH,
+    TEST_SET_PATH
+)
 from validation_loss_checker import ValidationLossChecker
 
 import matplotlib.pyplot as plt
@@ -48,11 +57,11 @@ from torchvision.transforms import (RandomRotation,
                                     RandomHorizontalFlip)
 
 
-def prepare_data(augment_transforms, use_clahe):
+def prepare_data(augment_transforms, use_clahe, IMAGES_PATH, TRAIN_SET_PATH, VALIDATION_SET_PATH):
 
     resize_transform = Resize((224, 224)) # some images are different sizes so resize them all to the same size
-    train_dataset = ChexpertDataset("train.csv", "D:/dataset fyp/", transform=resize_transform)
-    validation_dataset = ChexpertDataset("validation.csv", "D:/dataset fyp/", transform=resize_transform)
+    train_dataset = ChexpertDataset(TRAIN_SET_PATH, IMAGES_PATH, transform=resize_transform)
+    validation_dataset = ChexpertDataset(VALIDATION_SET_PATH, IMAGES_PATH, transform=resize_transform)
 
 
     print(f"dataset size: {train_dataset.__len__()}")
@@ -95,9 +104,10 @@ def prepare_data(augment_transforms, use_clahe):
     print(f"train transforms{train_transforms}")
     print(f"valid transforms{transforms}")
 
-    after_normalization_train_dataset = ChexpertDataset("train.csv", "D:/dataset fyp/", transform=train_transforms, use_clahe=use_clahe)
+    after_normalization_train_dataset = ChexpertDataset(TRAIN_SET_PATH, IMAGES_PATH, transform=train_transforms, use_clahe=use_clahe)
     after_normalization_train_loader = DataLoader(after_normalization_train_dataset, batch_size=25, shuffle=True)
-    after_normalization_validation_dataset = ChexpertDataset("validation.csv", "D:/dataset fyp/", transform=transforms)
+
+    after_normalization_validation_dataset = ChexpertDataset(VALIDATION_SET_PATH, IMAGES_PATH, transform=transforms)
     after_normalization_validation_loader = DataLoader(after_normalization_validation_dataset, batch_size=25, shuffle=True)
 
     # checking the after normalization dataset
@@ -119,7 +129,7 @@ def prepare_data(augment_transforms, use_clahe):
 
     return after_normalization_train_loader, after_normalization_validation_loader
 
-def prepare_test_data():
+def prepare_test_data(TEST_SET_PATH):
     resize_transform = Resize((224, 224)) # some images are different sizes so resize them all to the same size
     test_dataset = ChexpertDataset("prepared_test.csv", "D:/dataset fyp/", transform=resize_transform)
 
@@ -274,29 +284,32 @@ def evaluate_model(model, test_data_loader):
 
 if __name__ == "__main__":
     setup_folders()
+
     _, augment_transforms, use_weights, use_clahe, use_dropout, use_batch_norm = parse_arguments() 
-
-    print(f"CLASS WEIGHTS USED {use_weights}")
-    print(f"BATCH NORM USED:  {use_batch_norm}")
-
-    print(f"START TIME {datetime.now()}")
 
     # make the parent folder all of the logs, images, model will go into
     print(f"Evaluating Model {MODEL_NAME}")
-    if not os.path.exists("subset.csv"):
+    print(f"CLASS WEIGHTS USED {use_weights}")
+    print(f"BATCH NORM USED:  {use_batch_norm}")
+    print(f"START TIME {datetime.now()}")
+
+    subsetter = DataSubsetter(ORIGINAL_DATASET_PATH, TRAIN_SET_PATH, VALIDATION_SET_PATH, TEST_SET_PATH, LABELS)
+
+    if not (os.path.exists(TRAIN_SET_PATH)
+            and os.path.exists(VALIDATION_SET_PATH)):
         print("subsetting data to create train and validation files")
-        create_subset_train_validation()
+        subsetter.create_subset_train_validation()
     else:
         print("Train / Valid Subsets already created. Loader prep initializing..")
 
-    if not os.path.exists("prepared_test.csv"):
+    if not os.path.exists(TEST_SET_PATH):
         print("creating test dataset now")
-        create_test_data_csv()
+        subsetter.create_test_data_csv()
 
-    dataloader_for_training, data_loader_for_validation = prepare_data(augment_transforms, use_clahe)
-    data_loader_for_testing = prepare_test_data()
+    dataloader_for_training, data_loader_for_validation = prepare_data(augment_transforms, use_clahe, IMAGES_PATH, TRAIN_SET_PATH, VALIDATION_SET_PATH)
+    data_loader_for_testing = prepare_test_data(TEST_SET_PATH)
 
-    class_weights = calculate_class_weights('train.csv') if use_weights else None
+    class_weights = calculate_class_weights(TRAIN_SET_PATH) if use_weights else None
     
     print(f"USE DROPOUT: {use_dropout}")
     model = BaselineModel(use_dropout=use_dropout, use_batch_norm=use_batch_norm)

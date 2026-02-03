@@ -1,6 +1,7 @@
 from constants import MODEL_NAME
 from pathlib import Path
 
+CSV_PATHS = Path(f"data/")
 
 MODEL_ROOT = Path(f"results/{MODEL_NAME}")
 TRAIN_DATA_PATH = Path(f"{MODEL_ROOT}/train")
@@ -12,6 +13,7 @@ MATRIX_PATH = Path(f"{EVAL_DATA_PATH}/confusion matrices")
 
 def setup_folders():
 
+    CSV_PATHS.mkdir(exist_ok=True, parents=True)
     MODEL_ROOT.mkdir(exist_ok=True, parents=True)
     TRAIN_DATA_PATH.mkdir(exist_ok=True, parents=True)
     VALIDATION_DATA_PATH.mkdir(exist_ok=True, parents=True)
