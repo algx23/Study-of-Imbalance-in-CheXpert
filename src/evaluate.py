@@ -7,6 +7,7 @@ from sklearn.metrics import (classification_report,
                              ConfusionMatrixDisplay)
 from pathlib import Path
 import numpy as np
+from metric_calculator import MetricCalculator
                              
 
 class EvaluationLoop():
@@ -52,24 +53,6 @@ class EvaluationLoop():
         logit_df = pd.DataFrame(all_outputs, columns=LABELS)
         logit_df.to_csv(EVAL_DATA_PATH / "eval_logits.csv")
 
-        report = classification_report(y_true=all_labels_across_batches, y_pred=all_predictions_across_batches, target_names=LABELS, output_dict=True)
-
-        # save the report to a csv
-        report_df = pd.DataFrame(report).transpose()
-
-        report_path = EVAL_DATA_PATH / "classification_report.csv"
-        report_df.to_csv(report_path) 
-        print(report)
-
-        confusion_matrix = multilabel_confusion_matrix(y_true=np.array(all_labels_across_batches), y_pred=np.array(all_predictions_across_batches))
-        for i in range(len(LABELS)): # print the confusion matrix for the first class
-
-            matrix_plot = ConfusionMatrixDisplay(confusion_matrix[i])
-            matrix_plot.plot()
-
-            # save the plots
-            matrix_filepath = MATRIX_PATH / f"{LABELS[i]}_confusion_matrix"
-            matrix_plot.figure_.savefig(matrix_filepath)
-
-
+        metric_calculator = MetricCalculator(predictions=all_predictions_across_batches, truth=all_labels_across_batches)
+        metric_calculator.calculate_metrics()
         return
