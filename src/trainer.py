@@ -63,7 +63,6 @@ class Trainer():
                 write_train_loss_to_file(epoch_list, train_losses, validation_losses)
 
                 self.model.load_state_dict(torch.load(MODEL_ROOT / f"{MODEL_NAME}.pt"))
-                validation_loss_checker.plot_pr_curve(self.model)
 
                 return(train_losses, validation_losses, epoch_list)
 
@@ -72,7 +71,6 @@ class Trainer():
         validation_losses = validation_loss_checker.current_losses
         write_train_loss_to_file(epoch_list, train_losses, validation_losses)
 
-        validation_loss_checker.plot_pr_curve(self.model)
 
         print(f"training completed")
 

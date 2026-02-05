@@ -29,6 +29,7 @@ class EvaluationLoop():
         all_labels_across_batches = []
         all_predictions_across_batches = []
         all_outputs = []
+        all_probabilities = []
 
         self.model.eval()
         with torch.no_grad():
@@ -38,8 +39,10 @@ class EvaluationLoop():
                 all_outputs.extend(outputs.data.numpy())
                 loss = self.loss_fn(outputs, labels)
                 print(f"evaluation loss for batch {i+1}: {loss.item()}")
+                probability = torch.sigmoid(outputs)
+                all_probabilities.extend(probability.numpy())
 
-                predictions = (torch.sigmoid(outputs) > 0.5).int()
+                predictions = (probability  > 0.5).int()
 
                 all_labels_across_batches.extend(labels.numpy())
                 all_predictions_across_batches.extend(predictions.numpy())
@@ -52,6 +55,6 @@ class EvaluationLoop():
         logit_df = pd.DataFrame(all_outputs, columns=LABELS)
         logit_df.to_csv(EVAL_DATA_PATH / "eval_logits.csv")
 
-        metric_calculator = MetricCalculator(predictions=all_predictions_across_batches, truth=all_labels_across_batches)
+        metric_calculator = MetricCalculator(probabilities=all_probabilities, predictions=all_predictions_across_batches, truth=all_labels_across_batches)
         metric_calculator.calculate_metrics()
         return

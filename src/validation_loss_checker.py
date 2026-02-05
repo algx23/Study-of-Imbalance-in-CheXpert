@@ -39,49 +39,6 @@ class ValidationLossChecker():
 
         return loss_for_epoch
 
-    def plot_pr_curve(self, model):
-        all_predictions, all_labels = [], []
-        model.eval()
-        with torch.no_grad():
-            for i, data in enumerate(self.validation_loader):
-                images, labels = data
-                outputs = model(images)
-                predictions = torch.sigmoid(outputs)
-                all_predictions.extend(predictions.numpy())
-                all_labels.extend(labels.numpy())
-
-        all_pr_curve_fig = plt.figure(figsize=(10,6));
-        comp_pr_curve_fig = plt.figure(figsize=(10,6));
-
-        for i in range(len(LABELS)):
-            if LABELS[i] in CHEXPERT_COMP_LABELS:
-                plt.figure(comp_pr_curve_fig.number)
-                precision, recall, thresholds = precision_recall_curve(np.array(all_labels)[:, i], np.array(all_predictions)[:, i])
-                plt.plot(recall, precision, label=f'{LABELS[i]}')
-
-            plt.figure(all_pr_curve_fig.number)
-            precision, recall, thresholds = precision_recall_curve(np.array(all_labels)[:, i], np.array(all_predictions)[:, i])
-            plt.plot(recall, precision, label=f'{LABELS[i]}')
-
-        # format+save the pr curve figure of all classes
-        plt.figure(all_pr_curve_fig.number)
-        plt.xlabel('Recall')
-        plt.ylabel('Precision')
-        plt.legend(bbox_to_anchor=(1.05, 1))
-        plt_save_path = f"{VALIDATION_DATA_PATH}/pr_curve.png"
-        plt.savefig(plt_save_path, bbox_inches="tight")
-
-        # format+save the competition pr curve figure
-        plt.figure(comp_pr_curve_fig.number)
-        plt.xlabel('Recall')
-        plt.ylabel('Precision')
-        plt.legend(bbox_to_anchor=(1.05, 1))
-
-        plt_save_path = f"{VALIDATION_DATA_PATH}/comp_pr_curve.png"
-        plt.savefig(plt_save_path, bbox_inches="tight")
-
-        return
-
     def check_for_no_improvement(self, model):
         current_loss = self.compute_validation_loss(model)
         self.current_losses.append(current_loss)

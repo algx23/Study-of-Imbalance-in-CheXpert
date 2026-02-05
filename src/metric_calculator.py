@@ -1,13 +1,18 @@
 import pandas as pd
 import numpy as np
-from constants import LABELS
+from constants import LABELS, CHEXPERT_COMP_LABELS
 from path_creator import EVAL_DATA_PATH, MATRIX_PATH
 from sklearn.metrics import (classification_report,
                              multilabel_confusion_matrix,
-                             ConfusionMatrixDisplay)
+                             ConfusionMatrixDisplay,
+                             precision_recall_curve)
+
+import matplotlib.pyplot as plt
+
 class MetricCalculator():
 
-    def __init__(self, predictions, truth):
+    def __init__(self, probabilities, predictions, truth):
+        self.probabilities = probabilities
         self.predictions = predictions
         self.truth = truth
         return
@@ -37,8 +42,42 @@ class MetricCalculator():
 
        return
 
+    def plot_pr_curve(self):
+        all_pr_curve_fig = plt.figure(figsize=(10,6));
+        comp_pr_curve_fig = plt.figure(figsize=(10,6));
+
+        for i in range(len(LABELS)):
+            if LABELS[i] in CHEXPERT_COMP_LABELS:
+                plt.figure(comp_pr_curve_fig.number)
+                precision, recall, thresholds = precision_recall_curve(np.array(self.truth)[:, i], np.array(self.probabilities)[:, i])
+                plt.plot(recall, precision, label=f'{LABELS[i]}')
+
+            plt.figure(all_pr_curve_fig.number)
+            precision, recall, thresholds = precision_recall_curve(np.array(self.truth)[:, i], np.array(self.probabilities)[:, i])
+            plt.plot(recall, precision, label=f'{LABELS[i]}')
+
+        # format+save the pr curve figure of all classes
+        plt.figure(all_pr_curve_fig.number)
+        plt.xlabel('Recall')
+        plt.ylabel('Precision')
+        plt.legend(bbox_to_anchor=(1.05, 1))
+        plt_save_path = f"{EVAL_DATA_PATH}/pr_curve.png"
+        plt.savefig(plt_save_path, bbox_inches="tight")
+
+        # format+save the competition pr curve figure
+        plt.figure(comp_pr_curve_fig.number)
+        plt.xlabel('Recall')
+        plt.ylabel('Precision')
+        plt.legend(bbox_to_anchor=(1.05, 1))
+
+        plt_save_path = f"{EVAL_DATA_PATH}/comp_pr_curve.png"
+        plt.savefig(plt_save_path, bbox_inches="tight")
+
+        return
+
     def calculate_metrics(self):
         self.create_classification_report()
         self.create_per_class_confusion_matrices()
+        self.plot_pr_curve()
         return
 
