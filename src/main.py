@@ -90,9 +90,9 @@ if __name__ == "__main__":
 
     class_weights = calculate_class_weights(TRAIN_SET_PATH) if use_weights else None
     
-    model = BaselineModel(use_dropout=use_dropout, use_batch_norm=use_batch_norm)
 
     if not os.path.exists(f'{MODEL_ROOT}/{MODEL_NAME}.pt'):
+        model = BaselineModel(use_dropout=use_dropout, use_batch_norm=use_batch_norm)
         optimizer = Adam(model.parameters(), lr=1e-4)
         loss_fn = BCEWithLogitsLoss(pos_weight=class_weights)
 
@@ -102,9 +102,10 @@ if __name__ == "__main__":
         plot_loss(train_losses, validation_losses, epochs)
     else:
         print("previous models found!")
+        model = torch.load(MODEL_ROOT / f"{MODEL_NAME}.pt", weights_only=False)
 
-    model.load_state_dict(torch.load(MODEL_ROOT / f"{MODEL_NAME}.pt"))
     post_train_model = model
+    print(post_train_model)
 
     loss_fn = BCEWithLogitsLoss(pos_weight=class_weights)
 

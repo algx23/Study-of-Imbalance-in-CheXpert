@@ -78,7 +78,7 @@ def calculate_class_weights(train_file):
 
 
 def save_model(model):
-    torch.save(model.state_dict(), f"{MODEL_ROOT}/{MODEL_NAME}.pt")
+    torch.save(model, f"{MODEL_ROOT}/{MODEL_NAME}.pt")
     return
 
 def write_train_loss_to_file(epoch_list, loss_to_plot, validation_losses):

@@ -19,10 +19,9 @@ class EvaluationLoop():
         self.loss_fn = loss_fn
 
     def evaluate_model(self):
-        # TODO: EVALUATE MODEL MOVE FROM MAIN
         # save prediction/ground truth tensors to file for future logging
         tensor_save_path = Path(f"{EVAL_DATA_PATH}/tensor_data")
-        tensor_save_path.mkdir(exist_ok=True,parents=True)
+        tensor_save_path.mkdir(exist_ok=True, parents=True)
 
         test_loss = 0
         total_num_of_predictions = 0
