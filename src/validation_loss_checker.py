@@ -50,37 +50,36 @@ class ValidationLossChecker():
                 all_predictions.extend(predictions.numpy())
                 all_labels.extend(labels.numpy())
 
+        all_pr_curve_fig = plt.figure(figsize=(10,6));
+        comp_pr_curve_fig = plt.figure(figsize=(10,6));
 
-        plt.figure(figsize=(10,6))
-        # plot all the labels
-        for i in range(len(LABELS)):
-            precision, recall, thresholds = precision_recall_curve(np.array(all_labels)[:, i], np.array(all_predictions)[:, i])
-            plt.plot(recall, precision, label=f'{LABELS[i]}')
-
-        
-
-        plt.xlabel('Recall')
-        plt.ylabel('Precision')
-        plt.legend(bbox_to_anchor=(1.05, 1))
-
-        plt_save_path = f"{VALIDATION_DATA_PATH}/pr_curve.png"
-        plt.savefig(plt_save_path, bbox_inches="tight")
-        plt.clf()
-
-        # plot of only the competition labels
-        plt.figure(figsize=(10,6))
         for i in range(len(LABELS)):
             if LABELS[i] in CHEXPERT_COMP_LABELS:
+                plt.figure(comp_pr_curve_fig.number)
                 precision, recall, thresholds = precision_recall_curve(np.array(all_labels)[:, i], np.array(all_predictions)[:, i])
                 plt.plot(recall, precision, label=f'{LABELS[i]}')
 
+            plt.figure(all_pr_curve_fig.number)
+            precision, recall, thresholds = precision_recall_curve(np.array(all_labels)[:, i], np.array(all_predictions)[:, i])
+            plt.plot(recall, precision, label=f'{LABELS[i]}')
+
+        # format+save the pr curve figure of all classes
+        plt.figure(all_pr_curve_fig.number)
+        plt.xlabel('Recall')
+        plt.ylabel('Precision')
+        plt.legend(bbox_to_anchor=(1.05, 1))
+        plt_save_path = f"{VALIDATION_DATA_PATH}/pr_curve.png"
+        plt.savefig(plt_save_path, bbox_inches="tight")
+
+        # format+save the competition pr curve figure
+        plt.figure(comp_pr_curve_fig.number)
         plt.xlabel('Recall')
         plt.ylabel('Precision')
         plt.legend(bbox_to_anchor=(1.05, 1))
 
         plt_save_path = f"{VALIDATION_DATA_PATH}/comp_pr_curve.png"
         plt.savefig(plt_save_path, bbox_inches="tight")
-        plt.clf()
+
         return
 
     def check_for_no_improvement(self, model):
