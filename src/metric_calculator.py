@@ -5,7 +5,8 @@ from path_creator import EVAL_DATA_PATH, MATRIX_PATH
 from sklearn.metrics import (classification_report,
                              multilabel_confusion_matrix,
                              ConfusionMatrixDisplay,
-                             precision_recall_curve)
+                             precision_recall_curve,
+                             average_precision_score)
 
 import matplotlib.pyplot as plt
 
@@ -45,6 +46,7 @@ class MetricCalculator():
     def plot_pr_curve(self):
         all_pr_curve_fig = plt.figure(figsize=(10,6));
         comp_pr_curve_fig = plt.figure(figsize=(10,6));
+        avg_precision_scores = []
 
         for i in range(len(LABELS)):
             if LABELS[i] in CHEXPERT_COMP_LABELS:
@@ -55,6 +57,17 @@ class MetricCalculator():
             plt.figure(all_pr_curve_fig.number)
             precision, recall, thresholds = precision_recall_curve(np.array(self.truth)[:, i], np.array(self.probabilities)[:, i])
             plt.plot(recall, precision, label=f'{LABELS[i]}')
+
+            # compute the average precision for each label
+            # and add it as a column to the classification report
+            avg_precision = average_precision_score(y_true=np.array(self.truth)[:, i], y_score=np.array(self.probabilities)[:, i])
+            avg_precision_scores.append(avg_precision)
+        
+
+        # add the average precisions to the classification report
+        report = pd.read_csv(EVAL_DATA_PATH / "classification_report.csv")
+        report["Average Precision"] = pd.Series(avg_precision_scores)
+        report.to_csv(EVAL_DATA_PATH / "classification_report.csv")
 
         # format+save the pr curve figure of all classes
         plt.figure(all_pr_curve_fig.number)
