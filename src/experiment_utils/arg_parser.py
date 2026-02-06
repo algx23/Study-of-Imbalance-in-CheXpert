@@ -19,17 +19,16 @@ def parse_arguments():
                     "dropout": "if included, dropout layers will be added to the model after the ReLu Activation function is applied",
                     "bn": "if included Batch Normalization will be added to the model"
                     }
-    parser.add_argument("--name", required=True, type=str, help=help_strings["name"])
 
-    # to specify if there is any augment
-    parser.add_argument("--augment", "--aug", action="store_true")
+    # model name / experiment name - all metrics will be saved in a folder under this name
+    parser.add_argument("--name", required=True, type=str, help=help_strings["name"])
 
     # to specify if there is a class weight or not
     parser.add_argument("--class_weights", action="store_true", help=help_strings["class_weights"])
 
     # a flag for each augmentation
     # Rotation, Horizontal Flip, Vertical Flip, Colour Jitter, CLAHE
-    parser.add_argument("--rotate", type=int, choices= [0, 5, 10, 15, 30, 45], default=0, help=help_strings["rotate"])
+    parser.add_argument("--rotate", type=int, choices= [0, 5, 10, 30, 45], default=0, help=help_strings["rotate"])
     parser.add_argument("--vflip", type=float, help=help_strings["vflip"])
     parser.add_argument("--hflip", type=float, help=help_strings["hflip"])
     parser.add_argument("--jitter", type=float, nargs=2, help=help_strings["jitter"])
@@ -49,7 +48,6 @@ def parse_arguments():
         use_weights = True
     print(args)
 
-
     if args.rotate:
         augments_for_experiment.append(RandomRotation(args.rotate))
     if args.vflip:
@@ -59,6 +57,7 @@ def parse_arguments():
     if args.jitter:
         # since cheXpert images are grayscale, they do not have a hue or a saturation
         augments_for_experiment.append(ColorJitter(brightness=args.jitter[0], contrast=args.jitter[1]))
+
     if args.clahe: 
         use_clahe= True
     if args.dropout:
