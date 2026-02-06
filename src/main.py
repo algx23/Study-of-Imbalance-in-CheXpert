@@ -23,6 +23,7 @@ from constants import (
     NUM_EPOCHS,
     LABELS,
     MODEL_NAME,
+    VARS_FOR_EXPERIMENT,
     IMAGES_PATH,
     ORIGINAL_DATASET_PATH,
     SUBSET_PATH,
@@ -63,7 +64,7 @@ from evaluate import EvaluationLoop
 if __name__ == "__main__":
     setup_folders()
 
-    _, augment_transforms, use_weights, use_clahe, use_dropout, use_batch_norm = parse_arguments() 
+    augment_transforms, use_weights, use_clahe, use_dropout, use_batch_norm = VARS_FOR_EXPERIMENT
 
     # make the parent folder all of the logs, images, model will go into
     print(f"Evaluating Model {MODEL_NAME}")
