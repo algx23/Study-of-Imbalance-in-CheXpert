@@ -24,8 +24,6 @@ class EvaluationLoop():
         tensor_save_path.mkdir(exist_ok=True, parents=True)
 
         test_loss = 0
-        total_num_of_predictions = 0
-        number_of_correct_predictions = 0
         all_labels_across_batches = []
         all_predictions_across_batches = []
         all_outputs = []
@@ -36,7 +34,7 @@ class EvaluationLoop():
             for i, data in enumerate(self.test_loader):
                 images, labels = data
                 outputs = self.model(images)
-                all_outputs.extend(outputs.data.numpy())
+                all_outputs.extend(outputs.numpy())
                 loss = self.loss_fn(outputs, labels)
                 print(f"evaluation loss for batch {i+1}: {loss.item()}")
                 probability = torch.sigmoid(outputs)
