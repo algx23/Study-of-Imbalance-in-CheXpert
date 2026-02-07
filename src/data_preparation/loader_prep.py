@@ -101,7 +101,7 @@ def prepare_test_data(TEST_SET_PATH):
         Normalize(mean=mean, std=standard_deviation)
     ])
 
-    after_normalization_test_dataset = ChexpertDataset("prepared_test.csv", "D:/dataset fyp/", transform=transforms)
+    after_normalization_test_dataset = ChexpertDataset(TEST_SET_PATH, IMAGES_PATH, transform=transforms)
     after_normalization_test_loader = DataLoader(after_normalization_test_dataset, batch_size=25, shuffle=True)
 
     return after_normalization_test_loader

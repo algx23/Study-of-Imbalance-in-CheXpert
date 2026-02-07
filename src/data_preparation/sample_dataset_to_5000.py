@@ -87,16 +87,45 @@ class DataSubsetter():
 
 
         validation_mean = validation_df[self.LABELS].mean(axis=0) * 100
-        print(f"class distribution after sampling: \n{round(validation_mean, 2)}")
+        print(f"class distribution after sampling validation: \n{round(validation_mean, 2)}")
 
         return
 
     def create_test_data_csv(self):
-        df = pd.read_csv("../test.csv") 
+        all_df = pd.read_csv("prepared data.csv")
+        train_df = pd.read_csv(self.TRAIN_SET_PATH)
+        valid_df = pd.read_csv(self.VALIDATION_SET_PATH)
 
-        df = df.drop(df[df["Frontal/Lateral"] == "Lateral"].index)
+        # remove the rows that are in the train and validation
+        # sets so that when splitting it none of the rows get in
+        # either set - prevent leakage
 
-        df.to_csv(self.TEST_SET_PATH, index=False)
+        # adapted from: https://stackoverflow.com/questions/44706485/how-to-remove-rows-in-a-pandas-dataframe-if-the-same-row-exists-in-another-dataf
+        df_train_removed = pd.merge(all_df, train_df, indicator=True, how="outer").query("_merge=='left_only'").drop("_merge", axis=1)
+        df_fully_removed = pd.merge(df_train_removed, valid_df, indicator=True, how="outer").query("_merge=='left_only'").drop("_merge", axis=1)
+
+        # split this to get the test set
+        paths_to_images = df_fully_removed["Path"]
+        labels_for_each_row = df_fully_removed[self.LABELS].values
+        
+
+        test_split = MultilabelStratifiedShuffleSplit(n_splits=1, test_size=1000, random_state=0)
+        for _, test_index in test_split.split(paths_to_images, labels_for_each_row):
+            X_test = paths_to_images.iloc[test_index] 
+            Y_test = labels_for_each_row[test_index]
+
+        print(type(X_test))
+        print(type(Y_test))
+        print(X_test.shape)
+        print(Y_test.shape)
+
+        test_df = X_test.to_frame().reset_index(drop=True)
+        test_df[self.LABELS] = Y_test
+        print("Test set distribution: \n")
+        print(test_df[self.LABELS].mean() * 100)
+        test_df.to_csv(self.TEST_SET_PATH)
+
+
         return
 
 
