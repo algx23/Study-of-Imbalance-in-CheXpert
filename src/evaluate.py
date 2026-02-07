@@ -1,16 +1,12 @@
-from constants.paths import EVAL_DATA_PATH, MATRIX_PATH
+from constants.paths import EVAL_DATA_PATH
 from constants.control_variables import LABELS
 import pandas as pd
 import torch
-from sklearn.metrics import (classification_report, 
-                             multilabel_confusion_matrix,
-                             ConfusionMatrixDisplay)
 from pathlib import Path
-import numpy as np
 from metric_calculator import MetricCalculator
-                             
 
-class EvaluationLoop():
+
+class EvaluationLoop:
 
     def __init__(self, test_loader, model, loss_fn):
 
@@ -40,19 +36,23 @@ class EvaluationLoop():
                 probability = torch.sigmoid(outputs)
                 all_probabilities.extend(probability.numpy())
 
-                predictions = (probability  > 0.5).int()
+                predictions = (probability > 0.5).int()
 
                 all_labels_across_batches.extend(labels.numpy())
                 all_predictions_across_batches.extend(predictions.numpy())
 
-
-
         torch.save(all_labels_across_batches, f"{tensor_save_path}/truth_tensor.pt")
-        torch.save(all_predictions_across_batches, f"{tensor_save_path}/prediction_tensor.pt")
+        torch.save(
+            all_predictions_across_batches, f"{tensor_save_path}/prediction_tensor.pt"
+        )
 
         logit_df = pd.DataFrame(all_outputs, columns=LABELS)
         logit_df.to_csv(EVAL_DATA_PATH / "eval_logits.csv")
 
-        metric_calculator = MetricCalculator(probabilities=all_probabilities, predictions=all_predictions_across_batches, truth=all_labels_across_batches)
+        metric_calculator = MetricCalculator(
+            probabilities=all_probabilities,
+            predictions=all_predictions_across_batches,
+            truth=all_labels_across_batches,
+        )
         metric_calculator.calculate_metrics()
         return

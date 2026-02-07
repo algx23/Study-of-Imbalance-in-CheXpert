@@ -9,6 +9,7 @@ from constants.paths import MODEL_ROOT, TRAIN_DATA_PATH
 from pathlib import Path
 import csv
 
+
 def calculate_mean_and_standard_deviation(dataloader):
     """
     get the mean pixel value, and standard deviation for the entire dataset
@@ -26,7 +27,6 @@ def calculate_mean_and_standard_deviation(dataloader):
     sum_pixel_vals_squared = 0
     batches_amount = len(dataloader)
 
-
     # As per wikipedia X is some variable - for me it is the pixel value
     # for each batch of the dataset, calculate the mean pixel value for each batch
     # and divide by the number of batches to get the overall mean for the dataset E[X]
@@ -39,29 +39,33 @@ def calculate_mean_and_standard_deviation(dataloader):
     for train_features, train_labels in dataloader:
         # print(train_features.size()) # a batch of 25, 224x224 images [batch size, channels (1 because grayscale), height, width
         train_features = train_features.to(dtype=float32)
-        sum_pixel_vals += torch.mean(train_features) # calculate the mean for every image in the batch - uses every value in the batch
-        sum_pixel_vals_squared += torch.mean(train_features ** 2)
+        sum_pixel_vals += torch.mean(
+            train_features
+        )  # calculate the mean for every image in the batch - uses every value in the batch
+        sum_pixel_vals_squared += torch.mean(train_features**2)
 
-    mean = sum_pixel_vals / batches_amount # E[X] on wikipedia
-    variance = (sum_pixel_vals_squared / batches_amount - mean ** 2) # E[X^2] on wikipedia
+    mean = sum_pixel_vals / batches_amount  # E[X] on wikipedia
+    variance = sum_pixel_vals_squared / batches_amount - mean**2  # E[X^2] on wikipedia
     standard_deviation = sqrt(variance)
 
-    #print(mean, standard_deviation)
+    # print(mean, standard_deviation)
 
     return (mean, standard_deviation)
 
-def plot_loss(training_losses,validation_losses, epochs):
-    
-       plt.plot(epochs, training_losses, label="Training Loss")
-       plt.plot(epochs, validation_losses, label="Validation Loss")
-       plt.ylabel("Average Loss / epoch")
-       plt.xlabel("Number of epochs completed")
-       plt.legend()
-       plt.title("Training and Validation losses over epochs")
-       plt.savefig(f'{MODEL_ROOT}/{MODEL_NAME}_loss_graph.png')
-       plt.clf()
 
-       return
+def plot_loss(training_losses, validation_losses, epochs):
+
+    plt.plot(epochs, training_losses, label="Training Loss")
+    plt.plot(epochs, validation_losses, label="Validation Loss")
+    plt.ylabel("Average Loss / epoch")
+    plt.xlabel("Number of epochs completed")
+    plt.legend()
+    plt.title("Training and Validation losses over epochs")
+    plt.savefig(f"{MODEL_ROOT}/{MODEL_NAME}_loss_graph.png")
+    plt.clf()
+
+    return
+
 
 def calculate_class_weights(train_file):
     class_weights = []
@@ -81,6 +85,7 @@ def save_model(model):
     torch.save(model, f"{MODEL_ROOT}/{MODEL_NAME}.pt")
     return
 
+
 def write_train_loss_to_file(epoch_list, loss_to_plot, validation_losses):
     # add the losses to a file as logs
     loss_file = f"{TRAIN_DATA_PATH}/avg_epoch_loss.csv"
@@ -89,7 +94,9 @@ def write_train_loss_to_file(epoch_list, loss_to_plot, validation_losses):
     with open(loss_file, "w", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(loss_headings)
-        for epoch, train_loss, val_loss in zip(epoch_list, loss_to_plot, validation_losses):
+        for epoch, train_loss, val_loss in zip(
+            epoch_list, loss_to_plot, validation_losses
+        ):
             writer.writerow([epoch, train_loss, val_loss])
 
     return

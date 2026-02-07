@@ -1,62 +1,43 @@
 import os
-import pandas as pd
 from datetime import datetime
-from experiment_utils.arg_parser import parse_arguments
-
-from data_preparation import DataSubsetter, prepare_data, prepare_test_data
-
-import torch
-from chexpert_dataset import ChexpertDataset
-from torch.utils.data import DataLoader
-from torchvision.utils import save_image
-from torchvision.transforms import Compose,Normalize, Resize, ToTensor # to resize all images
-from utils import (calculate_mean_and_standard_deviation,
-                   calculate_class_weights,
-                   save_model,
-                   write_train_loss_to_file)
-
-
-from model import BaselineModel
-from torch.optim import Adam
-from torch.nn import BCEWithLogitsLoss
-from constants.control_variables import (
-    NUM_EPOCHS,
-    LABELS,
-    MODEL_NAME,
-    VARS_FOR_EXPERIMENT
-)
-from constants.paths import (
-    setup_folders,
-    MODEL_ROOT,
-    IMAGES_PATH,
-    ORIGINAL_DATASET_PATH,
-    SUBSET_PATH,
-    TRAIN_SET_PATH,
-    VALIDATION_SET_PATH,
-    TEST_SET_PATH
-    )
-
-from validation_loss_checker import ValidationLossChecker
-
-import matplotlib.pyplot as plt
-from utils import plot_loss
-
 from pathlib import Path
 
-from sklearn.metrics import (multilabel_confusion_matrix,
-                             classification_report,
-                             roc_auc_score,
-                             ConfusionMatrixDisplay)
-import numpy as np
-from PIL import Image
+import torch
 
-from trainer import Trainer
+from torch.nn import BCEWithLogitsLoss
+from torch.optim import Adam
+
+from constants.control_variables import (
+    LABELS,
+    MODEL_NAME,
+    NUM_EPOCHS,
+    VARS_FOR_EXPERIMENT,
+)
+from constants.paths import (
+    IMAGES_PATH,
+    MODEL_ROOT,
+    ORIGINAL_DATASET_PATH,
+    TEST_SET_PATH,
+    TRAIN_SET_PATH,
+    VALIDATION_SET_PATH,
+    setup_folders,
+)
+from data_preparation import DataSubsetter, prepare_data, prepare_test_data
 from evaluate import EvaluationLoop
+from model import BaselineModel
+from trainer import Trainer
+from utils import (
+    calculate_class_weights,
+    calculate_mean_and_standard_deviation,
+    plot_loss,
+)
 
 if __name__ == "__main__":
     setup_folders()
 
-    augment_transforms, use_weights, use_clahe, use_dropout, use_batch_norm = VARS_FOR_EXPERIMENT
+    augment_transforms, use_weights, use_clahe, use_dropout, use_batch_norm = (
+        VARS_FOR_EXPERIMENT
+    )
 
     # make the parent folder all of the logs, images, model will go into
     print(f"Evaluating Model {MODEL_NAME}")
@@ -65,10 +46,15 @@ if __name__ == "__main__":
     print(f"BATCH NORM USED:  {use_batch_norm}")
     print(f"START TIME {datetime.now()}")
 
-    subsetter = DataSubsetter(ORIGINAL_DATASET_PATH, TRAIN_SET_PATH, VALIDATION_SET_PATH, TEST_SET_PATH, LABELS)
+    subsetter = DataSubsetter(
+        ORIGINAL_DATASET_PATH,
+        TRAIN_SET_PATH,
+        VALIDATION_SET_PATH,
+        TEST_SET_PATH,
+        LABELS,
+    )
 
-    if not (os.path.exists(TRAIN_SET_PATH)
-            and os.path.exists(VALIDATION_SET_PATH)):
+    if not (os.path.exists(TRAIN_SET_PATH) and os.path.exists(VALIDATION_SET_PATH)):
         print("subsetting data to create train and validation files")
         subsetter.create_subset_train_validation()
     else:
@@ -78,19 +64,28 @@ if __name__ == "__main__":
         print("creating test dataset now")
         subsetter.create_test_data_csv()
 
-    dataloader_for_training, data_loader_for_validation = prepare_data(augment_transforms, use_clahe, IMAGES_PATH, TRAIN_SET_PATH, VALIDATION_SET_PATH)
+    dataloader_for_training, data_loader_for_validation = prepare_data(
+        augment_transforms, use_clahe, IMAGES_PATH, TRAIN_SET_PATH, VALIDATION_SET_PATH
+    )
     data_loader_for_testing = prepare_test_data(TEST_SET_PATH)
 
     class_weights = calculate_class_weights(TRAIN_SET_PATH) if use_weights else None
-    
 
-    if not os.path.exists(f'{MODEL_ROOT}/{MODEL_NAME}.pt'):
+    if not os.path.exists(f"{MODEL_ROOT}/{MODEL_NAME}.pt"):
         model = BaselineModel(use_dropout=use_dropout, use_batch_norm=use_batch_norm)
         optimizer = Adam(model.parameters(), lr=1e-4)
         loss_fn = BCEWithLogitsLoss(pos_weight=class_weights)
 
         print("no previous models, training now")
-        trainer = Trainer(model, optimizer=optimizer, loss_fn=loss_fn, train_loader=dataloader_for_training, validation_loader=data_loader_for_validation, class_weights=class_weights, NUM_EPOCHS=NUM_EPOCHS)
+        trainer = Trainer(
+            model,
+            optimizer=optimizer,
+            loss_fn=loss_fn,
+            train_loader=dataloader_for_training,
+            validation_loader=data_loader_for_validation,
+            class_weights=class_weights,
+            NUM_EPOCHS=NUM_EPOCHS,
+        )
         train_losses, validation_losses, epochs = trainer.train_model()
         plot_loss(train_losses, validation_losses, epochs)
     else:
@@ -102,8 +97,7 @@ if __name__ == "__main__":
 
     loss_fn = BCEWithLogitsLoss(pos_weight=class_weights)
 
-    print('EVALUATION STARTING')
+    print("EVALUATION STARTING")
     eval_loop = EvaluationLoop(data_loader_for_testing, post_train_model, loss_fn)
     eval_loop.evaluate_model()
     print(f"FINISH TIME {datetime.now()}")
-

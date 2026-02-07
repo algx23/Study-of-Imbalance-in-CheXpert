@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 
+
 class BaselineModel(nn.Module):
     """
     The baseline Model for my experiments. The model has 2 convolution layers,
@@ -21,12 +22,17 @@ class BaselineModel(nn.Module):
     - https://docs.pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
     - https://dingyan89.medium.com/calculating-parameters-of-convolutional-and-fully-connected-layers-with-keras-186590df36c6
     """
+
     def __init__(self, use_dropout, use_batch_norm):
         super().__init__()
         # convolution layer 1: 3x3 filters, 32 filters
         self.bias = False if use_batch_norm else True
-        self.conv_1 = nn.Conv2d(in_channels=1, out_channels=32, kernel_size=3, stride=2, bias=self.bias) 
-        self.conv_2 = nn.Conv2d(in_channels = 32, out_channels=64, kernel_size=3, stride=2, bias=self.bias)
+        self.conv_1 = nn.Conv2d(
+            in_channels=1, out_channels=32, kernel_size=3, stride=2, bias=self.bias
+        )
+        self.conv_2 = nn.Conv2d(
+            in_channels=32, out_channels=64, kernel_size=3, stride=2, bias=self.bias
+        )
         self.max_pool_1 = nn.MaxPool2d(kernel_size=2, stride=2)
         self.max_pool_2 = nn.MaxPool2d(kernel_size=2, stride=2)
 
@@ -36,12 +42,11 @@ class BaselineModel(nn.Module):
         self.flatten = nn.Flatten()
 
         # fully connected layer
-        self.fully_connected = nn.Linear(10816, 13 )
-
+        self.fully_connected = nn.Linear(10816, 13)
 
     def forward(self, images):
         # images into conv1
-       
+
         # input: 224x224, output shape = 224-3/2 + 1 = 111.0 with floor division
         images = self.conv_1(images)
 
@@ -70,9 +75,9 @@ class BaselineModel(nn.Module):
         # relu 2
         images = F.relu(images)
 
-        #max pool 2 -> input image = 27x27
+        # max pool 2 -> input image = 27x27
         images = self.max_pool_2(images)
-        #output = 27-2*2(0)/2 + 1 =13x13 image
+        # output = 27-2*2(0)/2 + 1 =13x13 image
 
         # if dropout is enabled in the model use it
         if self.dropout is not None:
@@ -86,6 +91,3 @@ class BaselineModel(nn.Module):
         images = self.fully_connected(images)
 
         return images
-        
-
-
