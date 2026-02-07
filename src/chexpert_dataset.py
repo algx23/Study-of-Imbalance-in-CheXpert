@@ -36,6 +36,9 @@ class ChexpertDataset(Dataset):
         path_to_single_image = os.path.join(self.image_dir, self.df.loc[idx, "Path"])
         image = cv2.imread(path_to_single_image, cv2.IMREAD_GRAYSCALE)
 
+        if image is None:
+            raise FileNotFoundError(f"Error: image not found at {path_to_single_image}")
+
         if self.use_clahe:
             clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
             image = clahe.apply(image)
