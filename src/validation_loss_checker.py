@@ -5,9 +5,12 @@ from utils import save_model
 from sklearn.metrics import precision_recall_curve, average_precision_score
 import numpy as np
 import matplotlib.pyplot as plt
-from constants import MODEL_NAME, LABELS, CHEXPERT_COMP_LABELS
+from constants.control_variables import (MODEL_NAME,
+                                         LABELS,
+                                         CHEXPERT_COMP_LABELS
+                                         )
 from pathlib import Path
-from path_creator import VALIDATION_DATA_PATH
+from constants.paths import VALIDATION_DATA_PATH
 
 class ValidationLossChecker():
     def __init__(self, min_improvement, epochs_to_wait, validation_loader, class_weights):

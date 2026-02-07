@@ -19,32 +19,29 @@ from utils import (calculate_mean_and_standard_deviation,
 from model import BaselineModel
 from torch.optim import Adam
 from torch.nn import BCEWithLogitsLoss
-from constants import (
+from constants.control_variables import (
     NUM_EPOCHS,
     LABELS,
     MODEL_NAME,
-    VARS_FOR_EXPERIMENT,
+    VARS_FOR_EXPERIMENT
+)
+from constants.paths import (
+    setup_folders,
+    MODEL_ROOT,
     IMAGES_PATH,
     ORIGINAL_DATASET_PATH,
     SUBSET_PATH,
     TRAIN_SET_PATH,
     VALIDATION_SET_PATH,
     TEST_SET_PATH
-)
+    )
+
 from validation_loss_checker import ValidationLossChecker
 
 import matplotlib.pyplot as plt
 from utils import plot_loss
 
 from pathlib import Path
-from path_creator import (
-    setup_folders,
-    MODEL_ROOT,
-    TRAIN_DATA_PATH,
-    VALIDATION_DATA_PATH,
-    EVAL_DATA_PATH,
-    MATRIX_PATH
-)
 
 from sklearn.metrics import (multilabel_confusion_matrix,
                              classification_report,
@@ -52,11 +49,6 @@ from sklearn.metrics import (multilabel_confusion_matrix,
                              ConfusionMatrixDisplay)
 import numpy as np
 from PIL import Image
-
-# augmentation imports
-from torchvision.transforms import (RandomRotation,
-                                    RandomHorizontalFlip)
-
 
 from trainer import Trainer
 from evaluate import EvaluationLoop

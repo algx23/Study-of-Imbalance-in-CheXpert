@@ -4,8 +4,8 @@ import torch
 import matplotlib.pyplot as plt
 
 import pandas as pd
-from constants import LABELS, MODEL_NAME
-from path_creator import MODEL_ROOT, TRAIN_DATA_PATH
+from constants.control_variables import LABELS, MODEL_NAME
+from constants.paths import MODEL_ROOT, TRAIN_DATA_PATH
 from pathlib import Path
 import csv
 

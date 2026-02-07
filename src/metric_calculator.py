@@ -1,7 +1,9 @@
 import pandas as pd
 import numpy as np
-from constants import LABELS, CHEXPERT_COMP_LABELS
-from path_creator import EVAL_DATA_PATH, MATRIX_PATH
+from constants.control_variables import (LABELS,
+                                         CHEXPERT_COMP_LABELS
+                                         )
+from constants.paths import EVAL_DATA_PATH, MATRIX_PATH
 from sklearn.metrics import (classification_report,
                              multilabel_confusion_matrix,
                              ConfusionMatrixDisplay,

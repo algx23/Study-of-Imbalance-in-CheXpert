@@ -1,5 +1,5 @@
-from path_creator import EVAL_DATA_PATH, MATRIX_PATH
-from constants import LABELS
+from constants.paths import EVAL_DATA_PATH, MATRIX_PATH
+from constants.control_variables import LABELS
 import pandas as pd
 import torch
 from sklearn.metrics import (classification_report, 

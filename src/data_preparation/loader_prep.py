@@ -1,10 +1,10 @@
-from constants import (IMAGES_PATH,
-                       TRAIN_SET_PATH,
-                       VALIDATION_SET_PATH,
-                       TEST_SET_PATH
+from constants.paths import (IMAGES_PATH,
+                             TRAIN_SET_PATH,
+                             VALIDATION_SET_PATH,
+                             TEST_SET_PATH,
+                             MODEL_ROOT
                        )
 
-from path_creator import MODEL_ROOT
 
 import torch
 from chexpert_dataset import ChexpertDataset

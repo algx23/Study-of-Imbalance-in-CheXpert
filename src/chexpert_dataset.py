@@ -2,7 +2,7 @@ import os
 import pandas as pd
 from torch.utils.data import Dataset
 from torchvision.io import decode_image
-from constants import LABELS
+from constants.control_variables import LABELS
 from torch import float32
 import cv2
 from PIL import Image
