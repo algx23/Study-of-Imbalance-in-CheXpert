@@ -113,21 +113,16 @@ class DataSubsetter:
 
     def create_test_data_csv(self):
         all_df = pd.read_csv("prepared data.csv")
-        train_df = pd.read_csv(self.TRAIN_SET_PATH)
-        valid_df = pd.read_csv(self.VALIDATION_SET_PATH)
+        subset_df = pd.read_csv("subset.csv")
 
         # remove the rows that are in the train and validation
         # sets so that when splitting it none of the rows get in
         # either set - prevent leakage
 
         # adapted from: https://stackoverflow.com/questions/44706485/how-to-remove-rows-in-a-pandas-dataframe-if-the-same-row-exists-in-another-dataf
-        df_train_removed = (
-            pd.merge(all_df, train_df, indicator=True, how="outer")
-            .query("_merge=='left_only'")
-            .drop("_merge", axis=1)
-        )
+
         df_fully_removed = (
-            pd.merge(df_train_removed, valid_df, indicator=True, how="outer")
+            pd.merge(all_df, subset_df, indicator=True, how="outer")
             .query("_merge=='left_only'")
             .drop("_merge", axis=1)
         )
@@ -137,7 +132,7 @@ class DataSubsetter:
         labels_for_each_row = df_fully_removed[self.LABELS].values
 
         test_split = MultilabelStratifiedShuffleSplit(
-            n_splits=1, test_size=1000, random_state=0
+            n_splits=1, test_size=2000, random_state=42
         )
         for _, test_index in test_split.split(paths_to_images, labels_for_each_row):
             X_test = paths_to_images.iloc[test_index]
