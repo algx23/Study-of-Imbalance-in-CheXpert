@@ -18,6 +18,7 @@ VALIDATION_DATA_PATH = Path(f"{MODEL_ROOT}/validation")
 
 EVAL_DATA_PATH = Path(f"{MODEL_ROOT}/evaluation")
 MATRIX_PATH = Path(f"{EVAL_DATA_PATH}/confusion matrices")
+COMPARISON_PATH = Path(f"comparisons/")
 
 
 def setup_folders():
@@ -28,4 +29,5 @@ def setup_folders():
     VALIDATION_DATA_PATH.mkdir(exist_ok=True, parents=True)
     EVAL_DATA_PATH.mkdir(exist_ok=True, parents=True)
     MATRIX_PATH.mkdir(exist_ok=True, parents=True)
+    COMPARISON_PATH.mkdir(exist_ok=True, parents=True)
     return
