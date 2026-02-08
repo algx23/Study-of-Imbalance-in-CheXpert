@@ -32,6 +32,8 @@ from utils import (
     plot_loss,
 )
 
+from comparison_generator import generate_comparisons
+
 if __name__ == "__main__":
     setup_folders()
 
@@ -100,4 +102,6 @@ if __name__ == "__main__":
     print("EVALUATION STARTING")
     eval_loop = EvaluationLoop(data_loader_for_testing, post_train_model, loss_fn)
     eval_loop.evaluate_model()
+
+    generate_comparisons("results")
     print(f"FINISH TIME {datetime.now()}")
