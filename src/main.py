@@ -35,13 +35,13 @@ from utils import (
 from comparison_generator import generate_comparisons
 
 if __name__ == "__main__":
+    # make the parent folder all of the logs, images, model will go into
     setup_folders()
 
     augment_transforms, use_weights, use_clahe, use_dropout, use_batch_norm = (
-        VARS_FOR_EXPERIMENT
+        VARS_FOR_EXPERIMENT  # controls the model configuration -> whether dropout/bn/augmentations are used etc
     )
 
-    # make the parent folder all of the logs, images, model will go into
     print(f"Evaluating Model {MODEL_NAME}")
     print(f"USE DROPOUT: {use_dropout}")
     print(f"CLASS WEIGHTS USED {use_weights}")
@@ -56,11 +56,13 @@ if __name__ == "__main__":
         LABELS,
     )
 
+    # check if the train.csv from which the train/val subset is created exists - if not prompt to download
     if not (os.path.exists(ORIGINAL_DATASET_PATH)):
         print(
             "Original Dataset not found \n Please download train.csv from: https://www.kaggle.com/datasets/ashery/chexpert"
         )
         exit(1)
+    # check if the folder of images that will be used in the dataloaders exists - if not prompt to download
     if not (os.path.exists(IMAGES_PATH)):
         print(
             "ERROR: Images not dowloaded \n please download the train folder from: https://www.kaggle.com/datasets/ashery/chexpert"
@@ -70,9 +72,13 @@ if __name__ == "__main__":
     if not (os.path.exists(TRAIN_SET_PATH) and os.path.exists(VALIDATION_SET_PATH)):
         print("subsetting data to create train and validation files")
         subsetter.create_subset_train_validation()
+        # if the train/val split needs to be remade
+        # remake the test set also to ensure test images arent in any other set
+        subsetter.create_test_data_csv()
     else:
         print("Train / Valid Subsets already created. Loader prep initializing..")
 
+    # if only the test set is gone just remake the tes set
     if not os.path.exists(TEST_SET_PATH):
         print("creating test dataset now")
         subsetter.create_test_data_csv()
