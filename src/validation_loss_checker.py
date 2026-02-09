@@ -8,6 +8,14 @@ class ValidationLossChecker:
     def __init__(
         self, min_improvement, epochs_to_wait, validation_loader, class_weights
     ):
+        """Initialze the loss checker to check loss on validation set at the end of every epoch
+
+        Args:
+            min_improvement (flaot): minimum reduction in validation loss to count as an improvement
+            epochs_to_wait (int): number of epochs where no improvement by the min_improvement is acceptable before training stops
+            validation_loader (DataLoader): Dataloader of the validation set
+            class_weights (Tensor): class weights for use in the loss function
+        """
         self.current_losses = []
         self.epoch_of_saved_model = 0
 
@@ -22,6 +30,14 @@ class ValidationLossChecker:
         self.loss_function = BCEWithLogitsLoss(class_weights)
 
     def compute_validation_loss(self, model):
+        """Compute the validation loss on the validation set with the given model
+
+        Args:
+            model (BaselineModel): The model to be validated
+
+        Returns:
+            float: the average loss for the epoch
+        """
         model.eval()
         with torch.no_grad():
             total_loss = 0
@@ -36,6 +52,12 @@ class ValidationLossChecker:
         return loss_for_epoch
 
     def check_for_no_improvement(self, model):
+        """Check the current loss against the best loss and update
+        the best loss if there is a big enough improvement
+
+        Args:
+            model (BaselineModel): The model on which to check the current loss against the best validation loss
+        """
         current_loss = self.compute_validation_loss(model)
         self.current_losses.append(current_loss)
 
@@ -57,6 +79,14 @@ class ValidationLossChecker:
         return
 
     def training_should_stop(self, model):
+        """Decide whether training should stop early
+
+        Args:
+            model (BaselineModel): The model being trained
+
+        Returns:
+            bool: True if no improvements have been made for at least epochs_to_wait
+        """
         self.check_for_no_improvement(model)
         if self.num_epochs_no_gain >= self.epochs_to_wait:
             self.stop_early = True
