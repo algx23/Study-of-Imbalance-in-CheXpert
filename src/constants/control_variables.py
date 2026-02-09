@@ -18,7 +18,7 @@ LABELS = [
 
 MODEL_NAME, *VARS_FOR_EXPERIMENT = parse_arguments()
 
-NUM_EPOCHS = 1  # for testing
+NUM_EPOCHS = 50
 CHEXPERT_COMP_LABELS = [
     "Atelectasis",
     "Cardiomegaly",
