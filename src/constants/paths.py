@@ -1,3 +1,7 @@
+"""Holds the paths of the csvs, images, and locations to which metrics
+will be saved
+"""
+
 from constants.control_variables import MODEL_NAME
 from pathlib import Path
 
@@ -22,6 +26,7 @@ COMPARISON_PATH = Path(f"comparisons/")
 
 
 def setup_folders():
+    """Creates folders to which csvs, and metrics will be saved"""
 
     CSV_PATHS.mkdir(exist_ok=True, parents=True)
     MODEL_ROOT.mkdir(exist_ok=True, parents=True)
