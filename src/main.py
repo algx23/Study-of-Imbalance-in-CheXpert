@@ -56,6 +56,17 @@ if __name__ == "__main__":
         LABELS,
     )
 
+    if not (os.path.exists(ORIGINAL_DATASET_PATH)):
+        print(
+            "Original Dataset not found \n Please download train.csv from: https://www.kaggle.com/datasets/ashery/chexpert"
+        )
+        exit(1)
+    if not (os.path.exists(IMAGES_PATH)):
+        print(
+            "ERROR: Images not dowloaded \n please download the train folder from: https://www.kaggle.com/datasets/ashery/chexpert"
+        )
+        exit(1)
+
     if not (os.path.exists(TRAIN_SET_PATH) and os.path.exists(VALIDATION_SET_PATH)):
         print("subsetting data to create train and validation files")
         subsetter.create_subset_train_validation()
