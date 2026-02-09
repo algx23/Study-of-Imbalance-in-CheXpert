@@ -1,3 +1,7 @@
+"""Holds the constants that act as controls for an experiment -
+things that do not change - ie labels, num epochs, the name
+"""
+
 from experiment_utils.arg_parser import parse_arguments
 
 LABELS = [
