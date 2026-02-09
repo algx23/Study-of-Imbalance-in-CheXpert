@@ -3,6 +3,7 @@ from iterstrat.ml_stratifiers import MultilabelStratifiedShuffleSplit
 
 
 class DataSubsetter:
+    """Class to create hte train, validation and test splits"""
 
     def __init__(
         self,
@@ -12,6 +13,15 @@ class DataSubsetter:
         TEST_SET_PATH,
         LABELS,
     ):
+        """Initialize the subsetter class
+
+        Args:
+            ORIGINAL_DATASET_PATH (string): path to the initial csv from which the subset is made
+            TRAIN_SET_PATH (string): path to which the train split will be saved
+            VALIDATION_SET_PATH (string): path to which the validation split csv will be saved
+            TEST_SET_PATH (string): path to which the test split csv will be saved
+            LABELS (List[String]): list of Label names to be used
+        """
         self.ORIGINAL_DATASET_PATH = ORIGINAL_DATASET_PATH
         self.TRAIN_SET_PATH = TRAIN_SET_PATH
         self.VALIDATION_SET_PATH = VALIDATION_SET_PATH
@@ -19,6 +29,9 @@ class DataSubsetter:
         self.LABELS = LABELS
 
     def create_subset_train_validation(self):
+        """Creates the train and validation splits, by first subsetting the full train csv into a
+        10k subset and then splitting this subset into a train and validation split, in a 90:10 ratio
+        """
         df = pd.read_csv(self.ORIGINAL_DATASET_PATH)
 
         # replace the blank columns for each disease with 0s
@@ -39,12 +52,11 @@ class DataSubsetter:
         )
 
         # get a sample of 10k
-
         paths_to_images = df["Path"]
         split = MultilabelStratifiedShuffleSplit(
             n_splits=1, test_size=len(paths_to_images.values) - 10000, random_state=0
         )
-        # test size is the number of images in the cleaned dataset, - 10,000 so that when MultilabelStratifiedShuffleSplit splits the data, i get 10,000 training images, which is all that is needed, and the rest are set as test images (though with test.csv provided this can be ignored)
+        # len(paths_to_images) = ~224k -> test size = 214k~ so train index provides 10k values
 
         # i am only subsetting the train.csv so the test indexes don't really matter
         for train_index, test_index in split.split(
@@ -76,12 +88,14 @@ class DataSubsetter:
         subset_mean = subset_df[self.LABELS].mean() * 100
         print(f"class distribution after sampling: \n{subset_mean}")
 
-        # splitting into validatation set for early stopping - 90/10
+        # splitting the subset into train/val - 90/10
         paths_to_training_images = subset_df["Path"]
         validation_split = MultilabelStratifiedShuffleSplit(
             n_splits=1, test_size=1000, random_state=0
         )
 
+        # train index will make up the train set, test indices make up the
+        # validation set
         for train_index, test_index in validation_split.split(
             paths_to_training_images, subset_df[self.LABELS].values
         ):
@@ -112,6 +126,10 @@ class DataSubsetter:
         return
 
     def create_test_data_csv(self):
+        """Creates the Test data csv containing the rows of images and their labels
+        Removes the subset from the original, full set, and then stratify samples a 2000
+        image subset, to ensure no images from the train or validation set enter the test set
+        """
         all_df = pd.read_csv("prepared data.csv")
         subset_df = pd.read_csv("subset.csv")
 
@@ -120,7 +138,6 @@ class DataSubsetter:
         # either set - prevent leakage
 
         # adapted from: https://stackoverflow.com/questions/44706485/how-to-remove-rows-in-a-pandas-dataframe-if-the-same-row-exists-in-another-dataf
-
         df_fully_removed = (
             pd.merge(all_df, subset_df, indicator=True, how="outer")
             .query("_merge=='left_only'")
