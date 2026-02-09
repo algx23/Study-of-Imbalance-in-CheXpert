@@ -5,6 +5,11 @@ from constants.paths import COMPARISON_PATH
 
 
 def generate_comparisons(path_to_results):
+    """Generates graphs comparing the F1 Score, Average Precision, and Recall for all trained models
+
+    Args:
+        path_to_results (string): the location of the results folder - all models/experiments are held in this directory
+    """
     all_f1_scores = {}  # f1 score from report for each model -> macro
     all_recall = {}
     all_ap = {}
@@ -31,6 +36,11 @@ def generate_comparisons(path_to_results):
 
 
 def compare_f1(all_f1_scores):
+    """Creates a graph comparing macro average f1 score for each model
+
+    Args:
+        all_f1_scores (dict): key: model names | values: corresponding macro f1 score
+    """
 
     x_model_names = all_f1_scores.keys()
     y_f1_scores = all_f1_scores.values()
@@ -49,6 +59,11 @@ def compare_f1(all_f1_scores):
 
 
 def compare_recall(all_recall):
+    """creates a graph of the recall values for all models from their classification reports
+
+    Args:
+        all_recall (dict): keys: model names, values: corresponding recall values
+    """
     x_model_names = all_recall.keys()
     y_recall = all_recall.values()
     plt.clf()
@@ -65,6 +80,11 @@ def compare_recall(all_recall):
 
 
 def compare_avg_precision(all_ap):
+    """Creates a graph comparing average precision score for all models
+
+    Args:
+        all_ap (dict): keys: model names | values: corresponding macro average_precision
+    """
     x_model_names = all_ap.keys()
     y_ap = all_ap.values()
 
