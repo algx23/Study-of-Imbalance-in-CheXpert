@@ -9,6 +9,18 @@ import os
 
 
 def prepare_image_for_classification(image_path):
+    """Takes a path to an image and classifies it using an existing model,
+    specified by the --name parameter when running the file
+
+    Args:
+        image_path (string): path to image to classify
+
+    Raises:
+        TypeError: if the image provided does not exist, or is not a png, or jpg file, a type error is raised
+
+    Returns:
+        Tensor: image in the shape (1, 1, 224, 224) as the model expects a batch of images
+    """
     mean = 0.5062857270240784
     standard_deviation = 0.2867498937006307
 
@@ -32,7 +44,7 @@ def make_classification(model, image):
     """Classifies a given image based on the chexpert labels
     Args: image_path [str]: The file path of the image to be classified
 
-    Returns:
+    Returns: table showing labels, the classification and confidence label
     """
     classifications, HEADERS = [], ["Label", "Prediction", "Confidence"]
 
