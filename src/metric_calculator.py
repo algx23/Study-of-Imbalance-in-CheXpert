@@ -14,14 +14,23 @@ import matplotlib.pyplot as plt
 
 
 class MetricCalculator:
+    """Generate Classification Report, Confusion Matrices, and Precision-Recall Curves"""
 
     def __init__(self, probabilities, predictions, truth):
+        """initialize metric calculator
+
+        Args:
+            probabilities (np array): the sigmoid of the logits from the model
+            predictions (np array): binary 0,1 class predictions for each class
+            truth (np array): binary 0,1 truth labels for each class/image
+        """
         self.probabilities = probabilities
         self.predictions = predictions
         self.truth = truth
         return
 
     def create_classification_report(self):
+        """generate classification report"""
 
         report = classification_report(
             y_true=self.truth,
@@ -44,10 +53,13 @@ class MetricCalculator:
         return
 
     def create_per_class_confusion_matrices(self):
+        """Generate a confusion matrix for each class
+        Reference: https://scikit-learn.org/stable/modules/generated/sklearn.metrics.multilabel_confusion_matrix.html
+        """
         confusion_matrices = multilabel_confusion_matrix(
             y_true=np.array(self.truth), y_pred=np.array(self.predictions)
         )
-        for i in range(len(LABELS)):  # print the confusion matrix for the first class
+        for i in range(len(LABELS)):
 
             matrix_plot = ConfusionMatrixDisplay(confusion_matrices[i])
             matrix_plot.plot()
@@ -59,6 +71,12 @@ class MetricCalculator:
         return
 
     def plot_pr_curve(self):
+        """Plot PR curve and save to a file, and calculate average precision and add to the classification report
+        Reference:
+            - PR Curves: https://scikit-learn.org/stable/modules/generated/sklearn.metrics.precision_recall_curve.html
+            - Changing the figure to control where its plotted:
+                https://stackoverflow.com/questions/7986567/matplotlib-how-to-set-the-current-figure
+        """
         all_pr_curve_fig = plt.figure(figsize=(10, 6))
         comp_pr_curve_fig = plt.figure(figsize=(10, 6))
         avg_precision_scores = []
@@ -121,6 +139,7 @@ class MetricCalculator:
         return
 
     def calculate_metrics(self):
+        """entry point to calculate all metrics"""
         self.create_classification_report()
         self.create_per_class_confusion_matrices()
         self.plot_pr_curve()
