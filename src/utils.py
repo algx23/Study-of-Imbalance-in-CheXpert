@@ -54,6 +54,13 @@ def calculate_mean_and_standard_deviation(dataloader):
 
 
 def plot_loss(training_losses, validation_losses, epochs):
+    """Plots the train and validatoin losses to a graph and saves them
+
+    Args:
+        training_losses (List): list of train losses
+        validation_losses (list): list of validation losses
+        epochs (list): list of epoch numbers
+    """
 
     plt.plot(epochs, training_losses, label="Training Loss")
     plt.plot(epochs, validation_losses, label="Validation Loss")
@@ -68,6 +75,14 @@ def plot_loss(training_losses, validation_losses, epochs):
 
 
 def calculate_class_weights(train_file):
+    """Calculates the class weights using the ratio of negative:positive examples for a given class
+
+    Args:
+        train_file (str): the path of the train csv
+
+    Returns:
+        Tensor: a tensor containing the weight values for each class
+    """
     class_weights = []
     train_csv = pd.read_csv(train_file)
     for LABEL in LABELS:
@@ -82,11 +97,23 @@ def calculate_class_weights(train_file):
 
 
 def save_model(model):
+    """Saves a model to the model path
+
+    Args:
+        model (BaselineModel): the model to be saved
+    """
     torch.save(model, f"{MODEL_ROOT}/{MODEL_NAME}.pt")
     return
 
 
 def write_train_loss_to_file(epoch_list, loss_to_plot, validation_losses):
+    """Write the train losses to a file
+
+    Args:
+        epoch_list (List): list of epoch numbers
+        loss_to_plot (List): list of train losses
+        validation_losses (list): list of validation losses
+    """
     # add the losses to a file as logs
     loss_file = f"{TRAIN_DATA_PATH}/avg_epoch_loss.csv"
 
