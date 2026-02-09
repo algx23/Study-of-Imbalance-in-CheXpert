@@ -7,14 +7,23 @@ from metric_calculator import MetricCalculator
 
 
 class EvaluationLoop:
+    """The Evaluation loop to test the performance of all models, and generate metrics for comparison"""
 
     def __init__(self, test_loader, model, loss_fn):
+        """Initialize the evaluation loop
+
+        Args:
+            test_loader (DataLoader): the dataloader on which to test
+            model (BaselineModel): the model instance to test
+            loss_fn (BCEWithLogitsLoss): the loss function to use
+        """
 
         self.test_loader = test_loader
         self.model = model
         self.loss_fn = loss_fn
 
     def evaluate_model(self):
+        """Evalues the model, saves logits and calculates metrics"""
         # save prediction/ground truth tensors to file for future logging
         tensor_save_path = Path(f"{EVAL_DATA_PATH}/tensor_data")
         tensor_save_path.mkdir(exist_ok=True, parents=True)
