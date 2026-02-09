@@ -16,6 +16,17 @@ class Trainer:
         class_weights,
         NUM_EPOCHS,
     ):
+        """Initialize the training loop
+
+        Args:
+            model (BaselineModel): the model to be rtained
+            optimizer (Adam): Optimizer to use
+            loss_fn (BCEWithLogitsLoss): loss function to use
+            train_loader (DataLoader): dataloader for training
+            validation_loader (DataLoader): dataloader to compute validation loss for early stopping
+            class_weights (Tensor): Tensor of class weights to be passed through when computing validation loss
+            NUM_EPOCHS (int): max number of epochs to train
+        """
         self.model = model
         self.optimizer = optimizer
         self.loss_fn = loss_fn
@@ -25,6 +36,13 @@ class Trainer:
         self.NUM_EPOCHS = NUM_EPOCHS
 
     def train_model(self):
+        """Train the model, computing validation and training loss at every epoch,
+        saving the model each time the validation loss improves enough
+
+        Returns:
+            tuple: returns the  average train and validation losses for each epoch,
+            as well as the epoch number to be saved to a file and to be plotted
+        """
 
         validation_loss_checker = ValidationLossChecker(
             min_improvement=0.0001,
