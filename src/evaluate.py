@@ -46,6 +46,7 @@ class EvaluationLoop:
             all_predictions_across_batches, f"{tensor_save_path}/prediction_tensor.pt"
         )
 
+        # saving the logits just in case
         logit_df = pd.DataFrame(all_outputs, columns=LABELS)
         logit_df.to_csv(EVAL_DATA_PATH / "eval_logits.csv")
 
