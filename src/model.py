@@ -45,6 +45,15 @@ class BaselineModel(nn.Module):
         self.fully_connected = nn.Linear(10816, 13)
 
     def forward(self, images):
+        """pass images through the model
+        Reference for shape calculations: https://dingyan89.medium.com/calculating-parameters-of-convolutional-and-fully-connected-layers-with-keras-186590df36c6
+
+        Args:
+            images  (): batch of images
+
+        Returns:
+            Tensor: logits as output which will be transformed with sigmoid and thresholded to make a prediction
+        """
         # images into conv1
 
         # input: 224x224, output shape = 224-3/2 + 1 = 111.0 with floor division
