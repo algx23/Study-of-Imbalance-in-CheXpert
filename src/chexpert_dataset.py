@@ -27,6 +27,15 @@ class ChexpertDataset(Dataset):
         target_transform=None,
         use_clahe=False,
     ):
+        """Initialize the Chexpert Dataset
+
+        Args:
+            subset_csv_dir (string): location of the CSV of images to be loaded into the dataset
+            image_dir (string): location of the actual CheXpert v1 small images
+            transform (_type_, optional): transforms to be applied to images. Defaults to None.
+            target_transform (_type_, optional): transforms to be applied to labels. Defaults to None.
+            use_clahe (bool, optional): controls whether CLAHE augmentation will be applied to the images. Defaults to False.
+        """
         self.df = pd.read_csv(subset_csv_dir)
         self.labels = self.df[LABELS]  # all the columns with labels
         self.image_dir = image_dir
@@ -44,6 +53,17 @@ class ChexpertDataset(Dataset):
     def __getitem__(
         self, idx
     ):  # return an image and its labels for a specific index / row number
+        """Returns an image and its labels for a specific index / row
+
+        Args:
+            idx (int): index to recieve
+
+        Raises:
+            FileNotFoundError: Raised if an image cannot be found
+
+        Returns:
+            tuple: returns the image and its label
+        """
         path_to_single_image = os.path.join(self.image_dir, self.df.loc[idx, "Path"])
         image = cv2.imread(path_to_single_image, cv2.IMREAD_GRAYSCALE)
 
