@@ -129,3 +129,27 @@ In this week I wrote the project log and thought more about my project objective
 - I also found some logic bugs, such as the calculate_class_weights function not returning the class weights, which i spent time fixing.
 - I also realized that the main files were getting rather large, and started planning a large refactor in the coming weeks
 - I believe that I am in a very good position to start running experiments towards the mid-end of [w/c 26.1.2026]. While this is a lot later than the initial, interim timeline, I believe the use of the flags and shell script to define the experiments will help me gain back a lot of time.
+
+## Week 18 [w/c 26.1.2026]
+- In this week I started to think more about making my project better for the Principal Marker interview, on 10.2.2026 so I focused on adding help messages for the flags, as if the Principal Marker wanted to test my training script I thought it would help readability
+- I also implemented a CLAHE flag `--clahe` to specify whether for a given run, the CLAHE augmentation would be used
+- For this, I realized that it would be easier, in terms of readability and structuring my code to load the images as an OpenCV image, so I converted the ChexpertDataset class to do this.
+- I also fixed some bugs, for example the PR curves would not save if EarlyStopping was not triggered, as I forgot to call the function to plot and save the curves. Additionally,I decided to save the evaluation logits themselves to files in case I wanted to calculate new metrics in future
+- I also implemented a `--dropout` flag, similar to the `--clahe` flag, to specify whether dropout would be used in the model or not.
+- I also had a meeting with my supervisor this week, to catch up on the status of the project, and he said that it would be good for the demo, to have something to show the models working - so I wrote a simple script allowing the user to provide a path to an image, and the name of an existing model, and the model would then run inference on that image and display the result.
+- Towards the end of the week I also implemented a `--bn` flag, to specify whether a given run would have batch norm layers or not
+- I also decided that, for the demo, I should refactor the code, so I started working on it in this week by creating all needed filepaths, before the main program flow starts
+
+## Week 19 [w/c 2.2.2026]
+- This week I continued on the refactor, and I started by encapsulating the training loop, and the evaluation loop into their own classes - Trainer and EvaluationLoop respectively. I also encapsulated the data loader preparation functions `prepare_data` and `prepare_test_data` into their own module
+- Part of this refactor was also moving the report and confusion matrix creation logic, into their own MetricCalculator class 
+- I continued by refactoring the PR curve computation logic into one loop, rather than having it loop over LABELS once for the graph containing all labels, and then again for the competition labels, I used two figures to loop through it once, and if the label was part of the CheXpert Competition, I would add it to both the complete and competition-only figures
+- I also decided to compute the PR curves on the test set, as then it would be a more valid comparison between models - the validation set has been used to decide when to stop training, and so I thought comparing models with metrics calculated from this set, would not be scientifically valid.
+- I also refactored the model settings - such as the augmentations, and the model name - to be stored in the constants file and then passed into main. I did this because it helped to make main a little cleaner, and meant that all the relevant "settings" for an experiment come from the same place which I think makes the code a little cleaner
+- I also improved the formatting of all the code, and added a check to see whether an image in the ChexpertDataset class was none in the __get_item__ function, as if an image got deleted, the program would not exit gracefully
+- I also added some logic to create comparison graphs based on the macro F1 Score, and increased the size of the test set to 2000.
+
+## Week 20 [w/c 9.2.2026]
+- This week I spent time making the final touches to get ready for my demo
+- I added documentation to all of my code, as well as some small error handling
+- However, after the demo, I had another assignment due, so most of my time was spent on that, but I have planned all experiments, and they will be run in [w/c 16.2.2026]. I ran 4 experiments for the demo but will run all of them in the next week
