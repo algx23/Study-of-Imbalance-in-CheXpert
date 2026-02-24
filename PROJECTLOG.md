@@ -153,3 +153,15 @@ In this week I wrote the project log and thought more about my project objective
 - This week I spent time making the final touches to get ready for my demo
 - I added documentation to all of my code, as well as some small error handling
 - However, after the demo, I had another assignment due, so most of my time was spent on that, but I have planned all experiments, and they will be run in [w/c 16.2.2026]. I ran 4 experiments for the demo but will run all of them in the next week
+
+## Week 21 [w/c 16.2.2026]
+- This week I spent some time running the individual experiments for each of the mitigation strategies
+- I managed to do initial runs, for:
+    - Baseline
+    - Class Weights
+    - Dropout
+    - Rotation [5,10,45 degrees]
+    - CLAHE
+    - Color Jittering
+- Next week I will work on running experiments with batch norm, and different combinations, after which I will spend some time analysing the results further - e.g. collecting per class results and putting the results in graphs
+- Also, considering the feedback from my principal marker interview, I may add more augmentations, such as CutMix, and other loss functions, such as focal loss, though I need to read up more on this
