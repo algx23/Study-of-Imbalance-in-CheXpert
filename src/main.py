@@ -122,3 +122,4 @@ if __name__ == "__main__":
 
     generate_comparisons("results")
     print(f"FINISH TIME {datetime.now()}")
+    print(f"Finished Evaluating {MODEL_NAME}")
