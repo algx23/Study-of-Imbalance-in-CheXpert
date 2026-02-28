@@ -11,7 +11,7 @@ python main.py --name baseline_with_weights_dropout --class_weights --dropout
 
 # Data Level Changes to help - Imbalanced data means the model sees more images of one class than another..does making the model see different images make the model generalize better to these classes
 #     - Rotation
-      python main.py --name rotation --rotate 5 --class_weights --dropout
+      python main.py --name rotation_5 --rotate 5 --class_weights --dropout
       Start-Sleep -Seconds 300
 
       python main.py --name rotation_10 --rotate 10 --class_weights --dropout
@@ -21,9 +21,9 @@ python main.py --name baseline_with_weights_dropout --class_weights --dropout
       Start-Sleep -Seconds 300
 
 #     - Flipping
-     python main.py --name horizontal_flip --hflip --class_weights --dropout
+     python main.py --name horizontal_flip --hflip 0.5 --class_weights --dropout
      Start-Sleep -Seconds 300
-     python main.py --name vertical_flip --vflip --class_weights --dropout
+     python main.py --name vertical_flip --vflip 0.5 --class_weights --dropout
      Start-Sleep -Seconds 300
 
   # Photometric Transformations: changing contrast
