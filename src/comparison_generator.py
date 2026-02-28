@@ -46,11 +46,12 @@ def compare_f1(all_f1_scores):
     y_f1_scores = all_f1_scores.values()
 
     plt.clf()
+    plt.figure(figsize=(12,7))
     plt.bar(x_model_names, y_f1_scores)
     # add the number on top of the bar
     # https://www.geeksforgeeks.org/python/adding-value-labels-on-a-matplotlib-bar-chart/
     for i in range(len(x_model_names)):
-        plt.text(i, list(y_f1_scores)[i], list(y_f1_scores)[i])
+        plt.text(i, list(y_f1_scores)[i], round(list(y_f1_scores)[i], 5))
     plt.xlabel("Experiment Name")
     plt.ylabel("Macro F1 Score")
 
@@ -67,11 +68,12 @@ def compare_recall(all_recall):
     x_model_names = all_recall.keys()
     y_recall = all_recall.values()
     plt.clf()
+    plt.figure(figsize=(12,7))
     plt.bar(x_model_names, y_recall)
     # add the number on top of the bar
     # https://www.geeksforgeeks.org/python/adding-value-labels-on-a-matplotlib-bar-chart/
     for i in range(len(x_model_names)):
-        plt.text(i, list(y_recall)[i], list(y_recall)[i])
+        plt.text(i, list(y_recall)[i], round(list(y_recall)[i], 5))
     plt.xlabel("Experiment Name")
     plt.ylabel("Macro Recall")
 
@@ -89,11 +91,12 @@ def compare_avg_precision(all_ap):
     y_ap = all_ap.values()
 
     plt.clf()
+    plt.figure(figsize=(12,7))
     plt.bar(x_model_names, y_ap)
     # add the number on top of the bar
     # https://www.geeksforgeeks.org/python/adding-value-labels-on-a-matplotlib-bar-chart/
     for i in range(len(x_model_names)):
-        plt.text(i, list(y_ap)[i], list(y_ap)[i])
+        plt.text(i, list(y_ap)[i], round(list(y_ap)[i], 5))
 
     plt.xlabel("Experiment Name")
     plt.ylabel("Macro Average Precision")
