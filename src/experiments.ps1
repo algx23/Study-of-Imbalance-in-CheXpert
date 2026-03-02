@@ -6,6 +6,9 @@ Start-Sleep -Seconds 300
 python main.py --name baseline_with_weighted_loss --class_weights 
 Start-Sleep -Seconds 300
 
+python main.py --name baseline_focal_loss --focal_loss
+Start-Sleep -Seconds 300
+
 # Model Architecture level changes to deal with Inter-class Similarity and Intra-Class Variance
 python main.py --name baseline_with_weights_dropout --class_weights --dropout
 
