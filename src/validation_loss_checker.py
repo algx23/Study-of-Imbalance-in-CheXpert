@@ -2,11 +2,12 @@ from torch.nn import BCEWithLogitsLoss
 import torch
 import math
 from utils import save_model
+from sklearn.metrics import average_precision_score
 
 
 class ValidationLossChecker:
     def __init__(
-        self, min_improvement, epochs_to_wait, validation_loader, class_weights
+        self, min_improvement, epochs_to_wait, validation_loader, class_weights, loss_fn
     ):
         """Initialze the loss checker to check loss on validation set at the end of every epoch
 
@@ -16,7 +17,7 @@ class ValidationLossChecker:
             validation_loader (DataLoader): Dataloader of the validation set
             class_weights (Tensor): class weights for use in the loss function
         """
-        self.current_losses = []
+        self.current_metrics = []
         self.epoch_of_saved_model = 0
 
         self.min_improvement = min_improvement
@@ -26,10 +27,10 @@ class ValidationLossChecker:
         self.validation_loader = validation_loader
 
         self.stop_early = False
-        self.best_loss = math.inf
-        self.loss_function = BCEWithLogitsLoss(class_weights)
+        self.best_metric = 0
+        self.loss_function = loss_fn
 
-    def compute_validation_loss(self, model):
+    def compute_validation_metric(self, model):
         """Compute the validation loss on the validation set with the given model
 
         Args:
@@ -38,18 +39,31 @@ class ValidationLossChecker:
         Returns:
             float: the average loss for the epoch
         """
+        all_probabilities = []
+        all_truth = []
+        all_predictions = []
+
         model.eval()
+
         with torch.no_grad():
             total_loss = 0
             for i, data in enumerate(self.validation_loader):
                 images, labels = data
                 outputs = model(images)
-                loss = self.loss_function(outputs, labels)
-                total_loss += loss.item()
 
-            loss_for_epoch = total_loss / len(self.validation_loader)
+                all_truth.extend(labels)
 
-        return loss_for_epoch
+                probability = torch.sigmoid(outputs)
+                all_probabilities.extend(probability.numpy())
+
+                prediction = (probability > 0.5).int()
+                all_predictions.extend(prediction.numpy())
+
+        validation_pr_auc = average_precision_score(
+            y_true=all_truth, y_score=all_probabilities
+        )
+
+        return validation_pr_auc
 
     def check_for_no_improvement(self, model):
         """Check the current loss against the best loss and update
@@ -58,13 +72,13 @@ class ValidationLossChecker:
         Args:
             model (BaselineModel): The model on which to check the current loss against the best validation loss
         """
-        current_loss = self.compute_validation_loss(model)
-        self.current_losses.append(current_loss)
+        current_metric = self.compute_validation_metric(model)
+        self.current_metrics.append(current_metric)
 
         # a better loss is lower than the current, by at least the min
         # improvement amount
-        if current_loss < self.best_loss - self.min_improvement:
-            self.best_loss = current_loss
+        if current_metric > self.best_metric + self.min_improvement:
+            self.best_metric = current_metric
             # if there is a improvement, reset the counter
             self.num_epochs_no_gain = 0
             save_model(model)  # save the model with the best loss
@@ -72,7 +86,7 @@ class ValidationLossChecker:
         else:  # not enough gain to constitute a new best loss
             self.num_epochs_no_gain += 1
 
-        print(f"best loss {self.best_loss}, current loss: {current_loss}")
+        print(f"best prauc {self.best_metric}, current prauc: {current_metric}")
         print(
             f"Epcohs without Improvement {self.num_epochs_no_gain} / {self.epochs_to_wait}"
         )

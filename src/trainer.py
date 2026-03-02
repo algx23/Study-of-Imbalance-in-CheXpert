@@ -3,6 +3,7 @@ from constants.control_variables import MODEL_NAME
 from constants.paths import MODEL_ROOT
 from validation_loss_checker import ValidationLossChecker
 from utils import write_train_loss_to_file, save_model
+from torch.nn import BCEWithLogitsLoss
 
 
 class Trainer:
@@ -21,7 +22,7 @@ class Trainer:
         Args:
             model (BaselineModel): the model to be rtained
             optimizer (Adam): Optimizer to use
-            loss_fn (BCEWithLogitsLoss): loss function to use
+            loss_fn (BCEWithLogitsLoss or FocalLoss): loss function to use
             train_loader (DataLoader): dataloader for training
             validation_loader (DataLoader): dataloader to compute validation loss for early stopping
             class_weights (Tensor): Tensor of class weights to be passed through when computing validation loss
@@ -49,9 +50,13 @@ class Trainer:
             epochs_to_wait=10,
             validation_loader=self.validation_loader,
             class_weights=self.class_weights,
+            loss_fn=self.loss_fn,
         )
 
-        print(f"Loss Weights: {self.loss_fn.pos_weight}")
+        print(type(self.loss_fn))
+        print(
+            f"Loss Weights || Alpha: {self.loss_fn.pos_weight if isinstance(self.loss_fn, BCEWithLogitsLoss) else self.loss_fn.alpha} "
+        )
 
         train_losses = []  # list of loss values to plot
         epoch_list = []  # corresponding epoch of each loss value during training
@@ -95,14 +100,14 @@ class Trainer:
 
             if validation_loss_checker.training_should_stop(self.model):
                 print(f"NOT ENOUGH IMPROVEMENT FOUND, STOPPING TRAINING")
-                validation_losses = validation_loss_checker.current_losses
+                validation_losses = validation_loss_checker.current_metrics
                 write_train_loss_to_file(epoch_list, train_losses, validation_losses)
 
                 return (train_losses, validation_losses, epoch_list)
 
         save_model(self.model)
 
-        validation_losses = validation_loss_checker.current_losses
+        validation_losses = validation_loss_checker.current_metrics
         write_train_loss_to_file(epoch_list, train_losses, validation_losses)
 
         print(f"training completed")
