@@ -30,15 +30,17 @@ from utils import (
     calculate_class_weights,
     calculate_mean_and_standard_deviation,
     plot_loss,
+    calculate_inverse_frequency_focal_loss
 )
 
 from comparison_generator import generate_comparisons
+from custom_loss_fns.focal_loss import FocalLoss
 
 if __name__ == "__main__":
     # make the parent folder all of the logs, images, model will go into
     setup_folders()
 
-    augment_transforms, use_weights, use_clahe, use_dropout, use_batch_norm = (
+    augment_transforms, use_weights, use_clahe, use_dropout, use_batch_norm, use_focal_loss = (
         VARS_FOR_EXPERIMENT  # controls the model configuration -> whether dropout/bn/augmentations are used etc
     )
 
@@ -46,6 +48,7 @@ if __name__ == "__main__":
     print(f"USE DROPOUT: {use_dropout}")
     print(f"CLASS WEIGHTS USED {use_weights}")
     print(f"BATCH NORM USED:  {use_batch_norm}")
+    print(f"Focal Loss USED: {use_focal_loss}")
     print(f"START TIME {datetime.now()}")
 
     subsetter = DataSubsetter(
@@ -90,10 +93,16 @@ if __name__ == "__main__":
 
     class_weights = calculate_class_weights(TRAIN_SET_PATH) if use_weights else None
 
+    if use_focal_loss:
+        alpha = calculate_inverse_frequency_focal_loss(TRAIN_SET_PATH)
+        gamma = 2 # as recommended by the paper
+        loss_fn = FocalLoss(alpha, gamma)
+    else:
+        loss_fn= BCEWithLogitsLoss(pos_weight=class_weights)
+
     if not os.path.exists(f"{MODEL_ROOT}/{MODEL_NAME}.pt"):
         model = BaselineModel(use_dropout=use_dropout, use_batch_norm=use_batch_norm)
         optimizer = Adam(model.parameters(), lr=1e-4)
-        loss_fn = BCEWithLogitsLoss(pos_weight=class_weights)
 
         print("no previous models, training now")
         trainer = Trainer(
@@ -113,8 +122,6 @@ if __name__ == "__main__":
 
     post_train_model = model
     print(post_train_model)
-
-    loss_fn = BCEWithLogitsLoss(pos_weight=class_weights)
 
     print("EVALUATION STARTING")
     eval_loop = EvaluationLoop(data_loader_for_testing, post_train_model, loss_fn)
