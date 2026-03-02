@@ -127,3 +127,12 @@ def write_train_loss_to_file(epoch_list, loss_to_plot, validation_losses):
             writer.writerow([epoch, train_loss, val_loss])
 
     return
+
+def calculate_inverse_frequency_focal_loss(TRAIN_SET_PATH):
+    df = pd.read_csv(TRAIN_SET_PATH)
+    inverse_class_frequencies = []
+    for label in LABELS:
+        freq = df[label].sum()
+        inverse_class_frequencies.append(1 / freq)
+
+    return torch.tensor(inverse_class_frequencies)
