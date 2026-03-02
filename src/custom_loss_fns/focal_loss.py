@@ -14,7 +14,6 @@ class FocalLoss(nn.Module):
     - Indicator Functions (to turn the focal loss into one equation): [https://en.wikipedia.org/wiki/Indicator_function]
     """
 
-    # TODO: setup focal loss
     def __init__(self, alpha: Tensor, gamma: float) -> None:
         super(FocalLoss, self).__init__()
         self.alpha = alpha
