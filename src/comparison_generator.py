@@ -28,9 +28,9 @@ def generate_comparisons(path_to_results):
         all_recall[model] = macro_recall
         all_ap[model] = macro_ap
 
-        compare_f1(all_f1_scores)
-        compare_recall(all_recall)
-        compare_avg_precision(all_ap)
+    compare_f1(all_f1_scores)
+    compare_recall(all_recall)
+    compare_avg_precision(all_ap)
 
     return
 
@@ -46,8 +46,8 @@ def compare_f1(all_f1_scores):
     y_f1_scores = all_f1_scores.values()
 
     plt.clf()
-    plt.figure(figsize=(12,7))
-    plt.bar(x_model_names, y_f1_scores)
+    plt.figure(figsize=(15,10))
+    plt.barh(x_model_names, y_f1_scores)
     # add the number on top of the bar
     # https://www.geeksforgeeks.org/python/adding-value-labels-on-a-matplotlib-bar-chart/
     for i in range(len(x_model_names)):
@@ -56,6 +56,7 @@ def compare_f1(all_f1_scores):
     plt.ylabel("Macro F1 Score")
 
     plt.savefig(COMPARISON_PATH / "F1_Scores.png")
+    plt.close()
     return
 
 
@@ -68,8 +69,8 @@ def compare_recall(all_recall):
     x_model_names = all_recall.keys()
     y_recall = all_recall.values()
     plt.clf()
-    plt.figure(figsize=(12,7))
-    plt.bar(x_model_names, y_recall)
+    plt.figure(figsize=(15,10))
+    plt.barh(x_model_names, y_recall)
     # add the number on top of the bar
     # https://www.geeksforgeeks.org/python/adding-value-labels-on-a-matplotlib-bar-chart/
     for i in range(len(x_model_names)):
@@ -78,6 +79,7 @@ def compare_recall(all_recall):
     plt.ylabel("Macro Recall")
 
     plt.savefig(COMPARISON_PATH / "Recall.png")
+    plt.close()
     return
 
 
@@ -91,8 +93,8 @@ def compare_avg_precision(all_ap):
     y_ap = all_ap.values()
 
     plt.clf()
-    plt.figure(figsize=(12,7))
-    plt.bar(x_model_names, y_ap)
+    plt.figure(figsize=(15,10))
+    plt.barh(x_model_names, y_ap)
     # add the number on top of the bar
     # https://www.geeksforgeeks.org/python/adding-value-labels-on-a-matplotlib-bar-chart/
     for i in range(len(x_model_names)):
@@ -102,4 +104,5 @@ def compare_avg_precision(all_ap):
     plt.ylabel("Macro Average Precision")
 
     plt.savefig(COMPARISON_PATH / "Average_precision.png")
+    plt.close()
     return
