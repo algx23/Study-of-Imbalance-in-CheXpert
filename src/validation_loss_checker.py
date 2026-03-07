@@ -1,8 +1,8 @@
 from torch.nn import BCEWithLogitsLoss
 import torch
-import math
 from utils import save_model
-from sklearn.metrics import average_precision_score
+from sklearn.metrics import average_precision_score,roc_curve, precision_recall_curve
+import numpy as np
 
 
 class ValidationLossChecker:
@@ -46,7 +46,6 @@ class ValidationLossChecker:
         model.eval()
 
         with torch.no_grad():
-            total_loss = 0
             for i, data in enumerate(self.validation_loader):
                 images, labels = data
                 outputs = model(images)
@@ -56,7 +55,7 @@ class ValidationLossChecker:
                 probability = torch.sigmoid(outputs)
                 all_probabilities.extend(probability.numpy())
 
-                prediction = (probability > 0.5).int()
+                prediction = (probability > 0.3).int()
                 all_predictions.extend(prediction.numpy())
 
         validation_pr_auc = average_precision_score(
@@ -106,3 +105,35 @@ class ValidationLossChecker:
             self.stop_early = True
 
         return self.stop_early
+
+    def calculate_optimal_threshold(self, model):
+        all_probabilities = []
+        all_truth = []
+        all_predictions = []
+
+        model.eval()
+        with torch.no_grad():
+            for i, data in enumerate(self.validation_loader):
+                images, labels = data
+                outputs = model(images)
+
+                all_truth.extend(labels)
+
+                probability = torch.sigmoid(outputs)
+                all_probabilities.extend(probability.numpy())
+
+                prediction = (probability > 0.3).int()
+                all_predictions.extend(prediction.numpy())
+
+        best_thresholds = []
+        # youden's jscore adapted from: https://machinelearningmastery.com/threshold-moving-for-imbalanced-classification/
+        # f1 score maximization to find the best threshold
+        # https://www.sciencedirect.com/science/article/pii/S2214579615000611
+        for i in range(13):
+            precision, recall, thresholds = precision_recall_curve( y_true=np.array(all_truth)[:,i], y_score=np.array(all_probabilities)[:,i])
+            f1_scores = (2 * recall * precision) / (recall + precision + 1e-7) # 1e-7 in case its 0
+            index_of_max_f1_score = np.argmax(f1_scores)
+            best_threshold_for_class = thresholds[index_of_max_f1_score]
+            best_thresholds.append(float(best_threshold_for_class))
+
+        return best_thresholds

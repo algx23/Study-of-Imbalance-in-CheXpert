@@ -1,6 +1,5 @@
 import os
 from datetime import datetime
-from pathlib import Path
 
 import torch
 
@@ -30,17 +29,20 @@ from utils import (
     calculate_class_weights,
     calculate_mean_and_standard_deviation,
     plot_loss,
-    calculate_inverse_frequency_focal_loss
+    calculate_normalized_inverse_frequency_focal_loss,
+    calculate_class_freq_cbfl,
 )
 
 from comparison_generator import generate_comparisons
 from custom_loss_fns.focal_loss import FocalLoss
+from custom_loss_fns.class_balanced_focal_loss import ClassBalancedFocalLoss
+import json
 
 if __name__ == "__main__":
     # make the parent folder all of the logs, images, model will go into
     setup_folders()
 
-    augment_transforms, use_weights, use_clahe, use_dropout, use_batch_norm, use_focal_loss = (
+    augment_transforms, use_weights, use_clahe, use_dropout, use_batch_norm, use_focal_loss, use_cbfl = (
         VARS_FOR_EXPERIMENT  # controls the model configuration -> whether dropout/bn/augmentations are used etc
     )
 
@@ -94,9 +96,15 @@ if __name__ == "__main__":
     class_weights = calculate_class_weights(TRAIN_SET_PATH) if use_weights else None
 
     if use_focal_loss:
-        alpha = calculate_inverse_frequency_focal_loss(TRAIN_SET_PATH)
+        alpha = calculate_normalized_inverse_frequency_focal_loss(TRAIN_SET_PATH)
+        print(f"alpha shape : {alpha.size()}")
         gamma = 2 # as recommended by the paper
         loss_fn = FocalLoss(alpha, gamma)
+    elif use_cbfl:
+        beta = calculate_class_freq_cbfl(TRAIN_SET_PATH)
+        print(f"beta shape: {beta.size()}")
+        gamma = 0.5
+        loss_fn = ClassBalancedFocalLoss(beta=beta, gamma=gamma)
     else:
         loss_fn= BCEWithLogitsLoss(pos_weight=class_weights)
 
@@ -125,7 +133,11 @@ if __name__ == "__main__":
 
     print("EVALUATION STARTING")
     eval_loop = EvaluationLoop(data_loader_for_testing, post_train_model, loss_fn)
-    eval_loop.evaluate_model()
+    # get the per-class thresholds for the model
+    with open(MODEL_ROOT / "thresholds.json", 'r', encoding="utf-8") as threshold_file:
+        data = json.load(threshold_file)
+        threshold = data["thresholds"]
+    eval_loop.evaluate_model(threshold)
 
     generate_comparisons("results")
     print(f"FINISH TIME {datetime.now()}")
