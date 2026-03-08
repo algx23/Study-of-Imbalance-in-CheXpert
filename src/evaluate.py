@@ -36,6 +36,8 @@ class EvaluationLoop:
         all_probabilities = []
 
         self.model.eval()
+
+        print(f"thresholds used : {thresholds}")
         with torch.no_grad():
             for i, data in enumerate(self.test_loader):
                 images, labels = data
@@ -46,7 +48,6 @@ class EvaluationLoop:
                 probability = torch.sigmoid(outputs)
                 all_probabilities.extend(probability.numpy())
 
-                print(f"thresholds : {thresholds}")
                 predictions = (probability > torch.tensor(thresholds)).int()
 
                 all_labels_across_batches.extend(labels.numpy())

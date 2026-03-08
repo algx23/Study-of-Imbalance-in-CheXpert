@@ -22,8 +22,8 @@ def parse_arguments():
         "dropout": "if included, dropout layers will be added to the model after the ReLu Activation function is applied",
         "bn": "if included Batch Normalization will be added to the model",
         "focal_loss": "if included , focal loss will be used rather than Binary Cross Entropy Loss",
-        "balanced_focal_loss": "if inlcuded, class balanced focal loss will be used"
-
+        "balanced_focal_loss": "if inlcuded, class balanced focal loss will be used",
+        "threshold": "Fixed: use a 0.3 fixed threshold for every model. Optimal: Calculate each model's optimal class thresholds based on maximizing the F1 Score"
     }
 
     # model name / experiment name - all metrics will be saved in a folder under this name
@@ -50,7 +50,8 @@ def parse_arguments():
     parser.add_argument("--dropout", action="store_true", help=help_strings["dropout"])
     parser.add_argument("--bn", action="store_true", help=help_strings["bn"])
     parser.add_argument("--focal_loss", action="store_true", help=help_strings["focal_loss"])
-    parser.add_argument("--balanced_focal_loss", action="store_true", help=help_strings["focal_loss"])
+    parser.add_argument("--balanced_focal_loss", action="store_true", help=help_strings["balanced_focal_loss"])
+    parser.add_argument("--threshold", type=str, choices=["fixed", "optimal"], default="fixed", help=help_strings["threshold"])
 
     use_weights, use_clahe, use_dropout, use_batch_norm, use_focal_loss, use_cbfl = False, False, False, False, False, False
     args = parser.parse_args()
@@ -91,6 +92,8 @@ def parse_arguments():
     if args.balanced_focal_loss:
         use_cbfl = True
 
+    threshold = args.threshold
+
     return (
         args.name,
         augments_for_experiment,
@@ -99,5 +102,6 @@ def parse_arguments():
         use_dropout,
         use_batch_norm,
         use_focal_loss,
-        use_cbfl
+        use_cbfl,
+        threshold
     )

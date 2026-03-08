@@ -42,7 +42,7 @@ if __name__ == "__main__":
     # make the parent folder all of the logs, images, model will go into
     setup_folders()
 
-    augment_transforms, use_weights, use_clahe, use_dropout, use_batch_norm, use_focal_loss, use_cbfl = (
+    augment_transforms, use_weights, use_clahe, use_dropout, use_batch_norm, use_focal_loss, use_cbfl, threshold = (
         VARS_FOR_EXPERIMENT  # controls the model configuration -> whether dropout/bn/augmentations are used etc
     )
 
@@ -134,9 +134,12 @@ if __name__ == "__main__":
     print("EVALUATION STARTING")
     eval_loop = EvaluationLoop(data_loader_for_testing, post_train_model, loss_fn)
     # get the per-class thresholds for the model
-    with open(MODEL_ROOT / "thresholds.json", 'r', encoding="utf-8") as threshold_file:
-        data = json.load(threshold_file)
-        threshold = data["thresholds"]
+    if threshold == "optimal":
+        with open(MODEL_ROOT / "thresholds.json", 'r', encoding="utf-8") as threshold_file:
+            data = json.load(threshold_file)
+            threshold = data["thresholds"]
+    else:
+        threshold = [0.3]*13
     eval_loop.evaluate_model(threshold)
 
     generate_comparisons("results")
