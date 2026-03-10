@@ -143,5 +143,5 @@ if __name__ == "__main__":
     eval_loop.evaluate_model(threshold)
 
     generate_comparisons("results")
-    print(f"FINISH TIME {datetime.now()}")
     print(f"Finished Evaluating {MODEL_NAME}")
+    print(f"FINISH TIME {datetime.now()}")
