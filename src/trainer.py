@@ -15,18 +15,18 @@ class Trainer:
         self,
         model,
         optimizer,
-        loss_fn,
+        loss_fn: BCEWithLogitsLoss | FocalLoss | ClassBalancedFocalLoss,
         train_loader,
         validation_loader,
         class_weights,
-        NUM_EPOCHS,
+        NUM_EPOCHS: int,
     ):
         """Initialize the training loop
 
         Args:
             model (BaselineModel): the model to be rtained
             optimizer (Adam): Optimizer to use
-            loss_fn (BCEWithLogitsLoss or FocalLoss): loss function to use
+            loss_fn (BCEWithLogitsLoss | FocalLoss): loss function to use
             train_loader (DataLoader): dataloader for training
             validation_loader (DataLoader): dataloader to compute validation loss for early stopping
             class_weights (Tensor): Tensor of class weights to be passed through when computing validation loss
