@@ -165,3 +165,38 @@ In this week I wrote the project log and thought more about my project objective
     - Color Jittering
 - Next week I will work on running experiments with batch norm, and different combinations, after which I will spend some time analysing the results further - e.g. collecting per class results and putting the results in graphs
 - Also, considering the feedback from my principal marker interview, I may add more augmentations, such as CutMix, and other loss functions, such as focal loss, though I need to read up more on this
+
+## Week 22 [w/c 23.2.2026]
+- This week, I continued the experiments as I added intial experimental results for horizontal, and vertical flips with a probability of the flip happening = 0.5
+- Towards the end of the week, I thought that I could also compare different loss functions, as just comparing non-weighted BCE and weighted BCE felt like it was not enough
+- I spent the week first reading the focal loss paper, and understanding what each part of the focal loss equation meant:
+	- FL(x) = -alpha_t (1-p_t)^gamma * log(p_t)
+		- alpha_t is the weighting factor: if the truth label is 1, alpha_t = alpha, otherwise alpha_t = 1-alpha
+			and as mentioned in the paper, alpha can be set by inverse class frequency
+		- pt is the probability of a given class: pt=p when y=1 otherwise pt=1-p
+- Since the equation was given as a piecewise function in the paper, I spent some days in the week trying to derive / deconstruct the equation, in such a way that I could program it easily
+	- I did this using Indicator functions, as they act a little like an if-else statement, so that I end with an equation where alpha_t and p_T are experessed only in terms of alpha and p
+- This resulted in the following equation:
+	- FL(x)=CE(αy(1−p)^γ+(1−α)(1−y) p^γ )
+- When i write my dissertation, I think it would be good to have a small section going over this derivation, so that is the plan
+
+- Focal Loss Paper: https://arxiv.org/pdf/1708.02002
+- indicator functions: https://en.wikipedia.org/wiki/Indicator_function
+
+## Week 23 [w/c 2.3.2026]
+- This week rather than just thinking about the theory of focal loss I started to think how I could integrate this into the experiments
+- One thing I realized is that, currently I was tracking validation LOSS as the primary metric for my Early Stopping, however, when I tested focal loss, the loss values were much smaller in magnitude than those given by the standard BCE Loss
+- Because of this, I decided to switch to tracking the validation PR-AUC (which is essentially the average_precision_score in sklearn), as the scales would be similar across all experiments
+- Additionally, I had some erorrs when I ran the initial Focal Loss Implementation, so I fixed these by making the class inherit from nn.module() which allows pytorch's backward pass for updating weights and gradients to work
+- I also implemented the alpha-balanced focal loss, by adding a function to calculate the weights, by calculating the inverse class frequency of each class
+- I also did some light changes to the comparison-graph-generating logic, by making the bars horizontal so they can all fit on the screen
+- Additionally, I found, interestingly, in the test runs, that Focal Loss was not doing as well as i thought, and decided I could turn this into an opportunity to compare another loss function, and so started to research class balanced focal loss
+- I spent some time reading the paper, linked below, and implemented CBFL, which uses a beta value to set the weights, rather than the raw inverse-frequency.
+- After some reading, I found that this, in theory should be better, as it uses the Effective number of samples [(1-beta / 1-beta^ny)], which accounts for the fact that after you have so many samples, adding new ones doesn't really give much new information
+- I then spent some time implementing the Class Balanced Focal Loss logic
+
+- Another thought I had, while reading and implementing these loss functions, is that the probability of a given class would be lower,
+perhaps due to focall loss forcing the model to learn more hard examples, and so its "confidence" would fall overall. This made me feel as though the 0.5 threshold i was using, was rather arbitrary, and, while it is good for comparing the raw ability of the techniques, in reality, no hospital going to use a model, without first tuning the thresholds for predicting a given class, to their data.
+- To address this, I implemented logic to calculate the optimal thresholds for each class, selecting thresholds based on what would maximize the f1 score.
+
+	
