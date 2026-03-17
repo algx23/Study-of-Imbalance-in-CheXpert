@@ -2,6 +2,9 @@ import os
 import matplotlib.pyplot as plt
 import pandas as pd
 from constants.paths import COMPARISON_PATH
+from constants.control_variables import LABELS
+import numpy as np
+from pathlib import Path
 
 
 def generate_comparisons(path_to_results):
@@ -13,6 +16,10 @@ def generate_comparisons(path_to_results):
     all_f1_scores = {}  # f1 score from report for each model -> macro
     all_recall = {}
     all_ap = {}
+    per_class_metrics = {}
+
+    for label in LABELS:
+        per_class_metrics.update({label: {"recall": {}, "f1": {}, "ap": {}}})
 
     model_names = os.listdir(path_to_results)
 
@@ -21,16 +28,37 @@ def generate_comparisons(path_to_results):
             f"{path_to_results}/{model}/evaluation/classification_report.csv",
             index_col=0,
         )
+        print(report.index.tolist())
+
         macro_f1 = report.iloc[-3, -3]  # row macro avg and col f1-score
         macro_recall = report.iloc[-3, -4]
         macro_ap = report.iloc[-3, -1]
+        
+        
+
         all_f1_scores[model] = macro_f1
         all_recall[model] = macro_recall
         all_ap[model] = macro_ap
 
-        compare_f1(all_f1_scores)
-        compare_recall(all_recall)
-        compare_avg_precision(all_ap)
+
+        # set the index so i can use loc[] to loop through the labels
+        report = report.set_index("Label") 
+        for label in LABELS:
+            label_recall = report.loc[label, "recall"]
+            label_f1 = report.loc[label, "f1-score"]
+            label_ap = report.loc[label, "Average Precision"]
+        # the dict structure would be like this:
+        # CLASS_LABEL: {Recall: {Model: 0.3, Model2: 0.3}}, {F1: {Model: 0, Model2: 0.9}}
+            per_class_metrics[label]["recall"].update({model: label_recall})
+            per_class_metrics[label]["f1"].update({model: label_f1})
+            per_class_metrics[label]["ap"].update({model: label_ap})
+
+    compare_f1(all_f1_scores)
+    compare_recall(all_recall)
+    compare_avg_precision(all_ap)
+
+    print(per_class_metrics)
+    compare_per_class_recall_f1_ap(per_class_metrics)
 
     return
 
@@ -46,8 +74,8 @@ def compare_f1(all_f1_scores):
     y_f1_scores = all_f1_scores.values()
 
     plt.clf()
-    plt.figure(figsize=(12,7))
-    plt.bar(x_model_names, y_f1_scores)
+    plt.figure(figsize=(15,10))
+    plt.barh(x_model_names, y_f1_scores)
     # add the number on top of the bar
     # https://www.geeksforgeeks.org/python/adding-value-labels-on-a-matplotlib-bar-chart/
     for i in range(len(x_model_names)):
@@ -56,6 +84,7 @@ def compare_f1(all_f1_scores):
     plt.ylabel("Macro F1 Score")
 
     plt.savefig(COMPARISON_PATH / "F1_Scores.png")
+    plt.close()
     return
 
 
@@ -68,8 +97,8 @@ def compare_recall(all_recall):
     x_model_names = all_recall.keys()
     y_recall = all_recall.values()
     plt.clf()
-    plt.figure(figsize=(12,7))
-    plt.bar(x_model_names, y_recall)
+    plt.figure(figsize=(15,10))
+    plt.barh(x_model_names, y_recall)
     # add the number on top of the bar
     # https://www.geeksforgeeks.org/python/adding-value-labels-on-a-matplotlib-bar-chart/
     for i in range(len(x_model_names)):
@@ -78,6 +107,7 @@ def compare_recall(all_recall):
     plt.ylabel("Macro Recall")
 
     plt.savefig(COMPARISON_PATH / "Recall.png")
+    plt.close()
     return
 
 
@@ -91,8 +121,8 @@ def compare_avg_precision(all_ap):
     y_ap = all_ap.values()
 
     plt.clf()
-    plt.figure(figsize=(12,7))
-    plt.bar(x_model_names, y_ap)
+    plt.figure(figsize=(15,10))
+    plt.barh(x_model_names, y_ap)
     # add the number on top of the bar
     # https://www.geeksforgeeks.org/python/adding-value-labels-on-a-matplotlib-bar-chart/
     for i in range(len(x_model_names)):
@@ -102,4 +132,54 @@ def compare_avg_precision(all_ap):
     plt.ylabel("Macro Average Precision")
 
     plt.savefig(COMPARISON_PATH / "Average_precision.png")
+    plt.close()
+    return
+
+def compare_per_class_recall_f1_ap(per_class_metrics: dict[str, dict[str, float]]):
+    """
+    Compare the F1, Recall and Average Precision (PR-AUC) of given classes
+    across the different models, and group the metrics per model - i.e. each
+    model will have 3 bars: one for Recall, one for F1 Score, and one for Average
+    Precision.
+
+    This will allow me to potentially make more in depth comparisons and have better
+    insights as to which classes each model is better at, and the reasons why,
+    compared to just comparing the macro averages. Additionally, graph creation is
+    automated at the end of each evaluation run, so adding new models will mean an
+    updated graph gets created.
+
+    Args:
+    - per_class_metrics: dict[str, dict[str, float]] : The dictionary containing
+    the per class metrics for each class. The dictionary follows the structure:
+    {class name : {Recall: {ModelName: val}}, {F1: {ModelName: val}, {AP: {ModelName: val}}}}
+    """
+
+    # TODO: Adapt this to make similar plots for other classes
+    print("-" * 20)
+    print(per_class_metrics)
+
+    # make the path if it exists already
+    per_class_save_path = COMPARISON_PATH / "per-class-comparison"
+
+    per_class_save_path.mkdir(exist_ok=True, parents=True)
+
+    # grouped bar logic from: https://www.geeksforgeeks.org/python/create-a-grouped-bar-plot-in-matplotlib/
+    for label in LABELS:
+        x_model_name = per_class_metrics[label]["recall"].keys()
+        y_recall = per_class_metrics[label]["recall"].values()
+        y_f1 = per_class_metrics[label]["f1"].values()
+        y_ap = per_class_metrics[label]["ap"].values()
+        plt.clf()
+        plt.figure(figsize=(30,15))
+        x_pos = np.arange(len(x_model_name))
+        width=0.2
+        plt.bar(x_pos-0.2, y_recall, width, color="blue")
+        plt.bar(x_pos, y_f1, width, color="green")
+        plt.bar(x_pos+0.2, y_ap, width, color="yellow")
+        plt.xticks(x_pos, x_model_name)
+        plt.xlabel("Model Name")
+        plt.ylabel("Score")
+        plt.legend(["Recall", "F1 Score", "Average Precision"])
+        plt.savefig(per_class_save_path / f"{label}-comparison.png")
+        plt.close()
     return

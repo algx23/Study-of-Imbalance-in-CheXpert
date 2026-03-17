@@ -127,3 +127,44 @@ def write_train_loss_to_file(epoch_list, loss_to_plot, validation_losses):
             writer.writerow([epoch, train_loss, val_loss])
 
     return
+
+def calculate_normalized_inverse_frequency_focal_loss(TRAIN_SET_PATH):
+    df = pd.read_csv(TRAIN_SET_PATH)
+    inverse_class_frequencies = []
+    for label in LABELS:
+        freq = df[label].sum()
+        inverse_class_frequencies.append(1 / freq)
+
+    inverse_class_frequencies = torch.tensor(inverse_class_frequencies)
+    print(f"pre normalized alpha: {inverse_class_frequencies}")
+    normalized_inverse_class_frequencies = inverse_class_frequencies / torch.sum(inverse_class_frequencies)
+
+    return normalized_inverse_class_frequencies
+
+def calculate_class_freq_cbfl(TRAIN_SET_PATH):
+    class_frequencies = []
+    df = pd.read_csv(TRAIN_SET_PATH)
+
+    for label in LABELS:
+        n_pos = df[label].sum()
+        n_neg = df.shape[0] - n_pos
+
+        class_frequencies.append([n_pos, n_neg])
+
+    # (1-beta) / (1-beta^n_y)
+
+    beta = 0.999
+    beta_class_weights = []
+    for pos_neg_pair in class_frequencies:
+        pos_weight = (1 - beta) / (1-beta**pos_neg_pair[0])
+        beta_class_weights.append(pos_weight)
+        
+    # normalize so that each pair of weights sum to 13
+    # x_i' = x_i(N/Sum(x_n))
+    print(f"beta_class frequencies {beta_class_weights}")
+    normalized_beta_class_weights =[]
+    for pos_weight in beta_class_weights:
+        normalized_weight = pos_weight * (13 / (sum(beta_class_weights)))
+        normalized_beta_class_weights.append(normalized_weight)
+
+    return torch.tensor(normalized_beta_class_weights)

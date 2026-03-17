@@ -4,6 +4,7 @@ import pandas as pd
 import torch
 from pathlib import Path
 from metric_calculator import MetricCalculator
+import numpy as np
 
 
 class EvaluationLoop:
@@ -22,7 +23,7 @@ class EvaluationLoop:
         self.model = model
         self.loss_fn = loss_fn
 
-    def evaluate_model(self):
+    def evaluate_model(self, thresholds):
         """Evalues the model, saves logits and calculates metrics"""
         # save prediction/ground truth tensors to file for future logging
         tensor_save_path = Path(f"{EVAL_DATA_PATH}/tensor_data")
@@ -35,6 +36,8 @@ class EvaluationLoop:
         all_probabilities = []
 
         self.model.eval()
+
+        print(f"thresholds used : {thresholds}")
         with torch.no_grad():
             for i, data in enumerate(self.test_loader):
                 images, labels = data
@@ -45,7 +48,7 @@ class EvaluationLoop:
                 probability = torch.sigmoid(outputs)
                 all_probabilities.extend(probability.numpy())
 
-                predictions = (probability > 0.5).int()
+                predictions = (probability > torch.tensor(thresholds)).int()
 
                 all_labels_across_batches.extend(labels.numpy())
                 all_predictions_across_batches.extend(predictions.numpy())

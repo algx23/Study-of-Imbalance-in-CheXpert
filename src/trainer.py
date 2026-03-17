@@ -1,8 +1,13 @@
 import torch
+import json
 from constants.control_variables import MODEL_NAME
 from constants.paths import MODEL_ROOT
 from validation_loss_checker import ValidationLossChecker
 from utils import write_train_loss_to_file, save_model
+from torch.nn import BCEWithLogitsLoss
+from custom_loss_fns.focal_loss import FocalLoss
+from custom_loss_fns.class_balanced_focal_loss import ClassBalancedFocalLoss
+
 
 
 class Trainer:
@@ -10,18 +15,18 @@ class Trainer:
         self,
         model,
         optimizer,
-        loss_fn,
+        loss_fn: BCEWithLogitsLoss | FocalLoss | ClassBalancedFocalLoss,
         train_loader,
         validation_loader,
         class_weights,
-        NUM_EPOCHS,
+        NUM_EPOCHS: int,
     ):
         """Initialize the training loop
 
         Args:
             model (BaselineModel): the model to be rtained
             optimizer (Adam): Optimizer to use
-            loss_fn (BCEWithLogitsLoss): loss function to use
+            loss_fn (BCEWithLogitsLoss | FocalLoss): loss function to use
             train_loader (DataLoader): dataloader for training
             validation_loader (DataLoader): dataloader to compute validation loss for early stopping
             class_weights (Tensor): Tensor of class weights to be passed through when computing validation loss
@@ -49,9 +54,17 @@ class Trainer:
             epochs_to_wait=10,
             validation_loader=self.validation_loader,
             class_weights=self.class_weights,
+            loss_fn=self.loss_fn,
         )
 
-        print(f"Loss Weights: {self.loss_fn.pos_weight}")
+        print(type(self.loss_fn))
+
+        if isinstance(self.loss_fn, BCEWithLogitsLoss):
+            print(f"BCE Loss Function Pos Weights: {self.loss_fn.pos_weight}")
+        elif isinstance(self.loss_fn, FocalLoss):
+            print(f"Focal Loss Function Alphas : {self.loss_fn.alpha}")
+        elif isinstance(self.loss_fn, ClassBalancedFocalLoss):
+            print(f"Class Balanced Focal Loss betas: {self.loss_fn.beta}")
 
         train_losses = []  # list of loss values to plot
         epoch_list = []  # corresponding epoch of each loss value during training
@@ -95,15 +108,28 @@ class Trainer:
 
             if validation_loss_checker.training_should_stop(self.model):
                 print(f"NOT ENOUGH IMPROVEMENT FOUND, STOPPING TRAINING")
-                validation_losses = validation_loss_checker.current_losses
+                validation_losses = validation_loss_checker.current_metrics
                 write_train_loss_to_file(epoch_list, train_losses, validation_losses)
+
+                # load model and calculate + save thresholds
+                self.model = torch.load(MODEL_ROOT / f"{MODEL_NAME}.pt", weights_only=False)
+                thresholds = validation_loss_checker.calculate_optimal_threshold(self.model)
+                threshold_dict = {"thresholds": thresholds}
+                with open(MODEL_ROOT / "thresholds.json", 'w') as threshold_file:
+                    json.dump(threshold_dict, threshold_file)
 
                 return (train_losses, validation_losses, epoch_list)
 
         save_model(self.model)
-
-        validation_losses = validation_loss_checker.current_losses
+        validation_losses = validation_loss_checker.current_metrics
         write_train_loss_to_file(epoch_list, train_losses, validation_losses)
+
+        # if training never stops still have to load the best model which may not be the latest one
+        self.model = torch.load(MODEL_ROOT / f"{MODEL_NAME}.pt", weights_only=False)
+        thresholds = validation_loss_checker.calculate_optimal_threshold(self.model)
+        threshold_dict = {"thresholds": thresholds}
+        with open(MODEL_ROOT / "thresholds.json", 'w') as threshold_file:
+            json.dump(threshold_dict, threshold_file)
 
         print(f"training completed")
 
