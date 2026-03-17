@@ -4,6 +4,7 @@ import pandas as pd
 from constants.paths import COMPARISON_PATH
 from constants.control_variables import LABELS
 import numpy as np
+from pathlib import Path
 
 
 def generate_comparisons(path_to_results):
@@ -154,29 +155,31 @@ def compare_per_class_recall_f1_ap(per_class_metrics: dict[str, dict[str, float]
     """
 
     # TODO: Adapt this to make similar plots for other classes
-    x_model_name = per_class_metrics["Fracture"]["recall"].keys()
-    y_recall = per_class_metrics["Fracture"]["recall"].values()
-    y_f1 = per_class_metrics["Fracture"]["f1"].values()
-    y_ap = per_class_metrics["Fracture"]["ap"].values()
     print("-" * 20)
-    print("\n")
-    print(x_model_name)
-    print(f"F1: {y_f1}")
-    print(f"Recall: {y_recall}")
-    print(f"ap: {y_ap}")
+    print(per_class_metrics)
+
+    # make the path if it exists already
+    per_class_save_path = COMPARISON_PATH / "per-class-comparison"
+
+    per_class_save_path.mkdir(exist_ok=True, parents=True)
 
     # grouped bar logic from: https://www.geeksforgeeks.org/python/create-a-grouped-bar-plot-in-matplotlib/
-    plt.clf()
-    plt.figure(figsize=(30,15))
-    x_pos = np.arange(len(x_model_name))
-    width=0.2
-    plt.bar(x_pos-0.2, y_recall, width, color="blue")
-    plt.bar(x_pos, y_f1, width, color="green")
-    plt.bar(x_pos+0.2, y_ap, width, color="yellow")
-    plt.xticks(x_pos, x_model_name)
-    plt.xlabel("Model Name")
-    plt.ylabel("Score")
-    plt.legend(["Recall", "F1 Score", "Average Precision"])
-    plt.savefig(COMPARISON_PATH / "per-class-fracture.png")
-    plt.close()
+    for label in LABELS:
+        x_model_name = per_class_metrics[label]["recall"].keys()
+        y_recall = per_class_metrics[label]["recall"].values()
+        y_f1 = per_class_metrics[label]["f1"].values()
+        y_ap = per_class_metrics[label]["ap"].values()
+        plt.clf()
+        plt.figure(figsize=(30,15))
+        x_pos = np.arange(len(x_model_name))
+        width=0.2
+        plt.bar(x_pos-0.2, y_recall, width, color="blue")
+        plt.bar(x_pos, y_f1, width, color="green")
+        plt.bar(x_pos+0.2, y_ap, width, color="yellow")
+        plt.xticks(x_pos, x_model_name)
+        plt.xlabel("Model Name")
+        plt.ylabel("Score")
+        plt.legend(["Recall", "F1 Score", "Average Precision"])
+        plt.savefig(per_class_save_path / f"{label}-comparison.png")
+        plt.close()
     return
