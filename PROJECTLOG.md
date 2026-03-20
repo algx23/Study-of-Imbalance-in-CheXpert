@@ -199,4 +199,10 @@ In this week I wrote the project log and thought more about my project objective
 perhaps due to focall loss forcing the model to learn more hard examples, and so its "confidence" would fall overall. This made me feel as though the 0.5 threshold i was using, was rather arbitrary, and, while it is good for comparing the raw ability of the techniques, in reality, no hospital going to use a model, without first tuning the thresholds for predicting a given class, to their data.
 - To address this, I implemented logic to calculate the optimal thresholds for each class, selecting thresholds based on what would maximize the f1 score.
 
-	
+## Week 24 [w/c 9. 3. 2026]
+- This week I conducted experiments for the mitigation strategies at a fixed 0.3 threshold, with BCE loss being the main loss function throughout
+- Additionally, I also started working on ways to analyse and visualize the results that I do have, and so I worked on a function to genereate grouped bar plots showing the Recall, F1 Score and Average precision of the fracture class
+- Initially I tested on the fracture class to see whether the logic was correct
+- I didn't do as much as I had hoped, but I am in a spot where the experiments will not take long to run, and the graphs generated will form the crux of my analysis
+
+=
