@@ -42,7 +42,7 @@ if __name__ == "__main__":
     # make the parent folder all of the logs, images, model will go into
     setup_folders()
 
-    augment_transforms, use_weights, use_clahe, use_dropout, use_batch_norm, use_focal_loss, use_cbfl, threshold = (
+    augment_transforms, use_weights, use_clahe, use_dropout, use_batch_norm, use_focal_loss, use_cbfl, use_mixup, threshold = (
         VARS_FOR_EXPERIMENT  # controls the model configuration -> whether dropout/bn/augmentations are used etc
     )
 
@@ -121,6 +121,7 @@ if __name__ == "__main__":
             validation_loader=data_loader_for_validation,
             class_weights=class_weights,
             NUM_EPOCHS=NUM_EPOCHS,
+            use_mixup=use_mixup
         )
         train_losses, validation_losses, epochs = trainer.train_model()
         plot_loss(train_losses, validation_losses, epochs)

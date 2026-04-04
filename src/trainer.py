@@ -8,6 +8,8 @@ from torch.nn import BCEWithLogitsLoss
 from custom_loss_fns.focal_loss import FocalLoss
 from custom_loss_fns.class_balanced_focal_loss import ClassBalancedFocalLoss
 
+from torchvision.transforms.v2 import MixUp
+
 
 
 class Trainer:
@@ -20,6 +22,7 @@ class Trainer:
         validation_loader,
         class_weights,
         NUM_EPOCHS: int,
+        use_mixup=False
     ):
         """Initialize the training loop
 
@@ -39,6 +42,7 @@ class Trainer:
         self.validation_loader = validation_loader
         self.class_weights = class_weights
         self.NUM_EPOCHS = NUM_EPOCHS
+        self.use_mixup = use_mixup
 
     def train_model(self):
         """Train the model, computing validation and training loss at every epoch,
@@ -79,6 +83,9 @@ class Trainer:
             self.model.train()
             for i, data in enumerate(self.train_loader):
                 images, labels = data
+                if self.use_mixup:
+                    mixup = MixUp(num_classes=13) 
+                    images, labels = mixup(images, labels)
                 self.optimizer.zero_grad()
                 outputs = self.model(images)
                 loss = self.loss_fn(outputs, labels)
