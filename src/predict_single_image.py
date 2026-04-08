@@ -1,12 +1,12 @@
+from pathlib import Path
 import torch
 from constants.control_variables import MODEL_NAME, LABELS
-from constants.paths import MODEL_ROOT
 from torchvision.transforms import Resize, Normalize, Compose, ToTensor
 import cv2
 from PIL import Image
 from tabulate import *
 import os
-
+import json
 
 def prepare_image_for_classification(image_path):
     """Takes a path to an image and classifies it using an existing model,
@@ -40,7 +40,7 @@ def prepare_image_for_classification(image_path):
     return image
 
 
-def make_classification(model, image):
+def make_classification(model, image, threshold):
     """Classifies a given image based on the chexpert labels
     Args: image_path [str]: The file path of the image to be classified
 
@@ -49,12 +49,14 @@ def make_classification(model, image):
     classifications, HEADERS = [], ["Label", "Prediction", "Confidence"]
 
     model.eval()
+    print(f"Threshold used: {threshold}")
     with torch.no_grad():
         output = model(image)
         confidence_score = torch.sigmoid(
             output
         )  # turns the raw output into a range 0 - 1
-        prediction = (confidence_score > 0.5).int()
+
+        prediction = (confidence_score > torch.tensor(threshold)).int()
 
         for label, prediction, confidence_score in zip(
             LABELS, prediction.tolist()[0], confidence_score.tolist()[0]
@@ -68,15 +70,14 @@ def make_classification(model, image):
 
 def main():
     # Check if the model name they provided exists already or not
-    path_to_model = MODEL_ROOT / f"{MODEL_NAME}.pt"
+    path_to_model = input("Enter the path to the model you would like to run inference on: \n")
 
     if not os.path.exists(path_to_model):
         results_folder_exists = os.path.exists("results")
         error_msg = (
-            f"Model `{MODEL_NAME}` not found at: {path_to_model}. "
-            f"Run [py main.py --name {MODEL_NAME}] to train, then return, or select an existing model. "
-            f"You can select from: {os.listdir("results") if results_folder_exists else 
-                                    'No Models Exist. Please train a model: py main.py --name NAME'}"
+            f"Model not found at: {path_to_model}. "
+            f"You could train the model using py main.py --name {os.path.basename(os.path.dirname(path_to_model))}"
+            f"Then, return to this script, and provide the model path from the 'results' folder."
         )
         raise FileNotFoundError(error_msg)
 
@@ -89,8 +90,18 @@ def main():
             )
             image = prepare_image_for_classification(image_path)
 
+            parent_of_model = Path(path_to_model).parent
+            threshold_file = parent_of_model / "thresholds.json"
+            if threshold_file.is_file():
+                with open(threshold_file, 'r', encoding="utf-8") as threshold_file:
+                    data = json.load(threshold_file)
+                    threshold = data["thresholds"]
+
+            else:
+                threshold = [0.3]*13
+
             # if the model and image exists, produce the classification
-            print(make_classification(model, image))
+            print(make_classification(model, image, threshold=threshold))
 
             break
         except TypeError as e:

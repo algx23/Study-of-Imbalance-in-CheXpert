@@ -39,12 +39,16 @@ from custom_loss_fns.class_balanced_focal_loss import ClassBalancedFocalLoss
 import json
 
 if __name__ == "__main__":
-    # make the parent folder all of the logs, images, model will go into
-    setup_folders()
-
     augment_transforms, use_weights, use_clahe, use_dropout, use_batch_norm, use_focal_loss, use_cbfl, use_mixup, threshold = (
         VARS_FOR_EXPERIMENT  # controls the model configuration -> whether dropout/bn/augmentations are used etc
     )
+
+    # make the parent folder all of the logs, images, model will go into
+    if MODEL_NAME == "NA":
+        print(f"Set a model name with the --name flag for training")
+        exit(1)
+
+    setup_folders()
 
     print(f"Evaluating Model {MODEL_NAME}")
     print(f"USE DROPOUT: {use_dropout}")

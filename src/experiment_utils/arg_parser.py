@@ -28,7 +28,7 @@ def parse_arguments():
     }
 
     # model name / experiment name - all metrics will be saved in a folder under this name
-    parser.add_argument("--name", required=True, type=str, help=help_strings["name"])
+    parser.add_argument("--name", required=False, type=str, help=help_strings["name"], default="NA")
 
     # to specify if there is a class weight or not
     parser.add_argument(
