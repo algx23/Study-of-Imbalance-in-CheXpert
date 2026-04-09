@@ -27,7 +27,6 @@ from model import BaselineModel
 from trainer import Trainer
 from utils import (
     calculate_class_weights,
-    calculate_mean_and_standard_deviation,
     plot_loss,
     calculate_normalized_inverse_frequency_focal_loss,
     calculate_class_freq_cbfl,
@@ -92,6 +91,8 @@ if __name__ == "__main__":
         print("creating test dataset now")
         subsetter.create_test_data_csv()
 
+    subsetter.calculate_patient_overlap()
+
     dataloader_for_training, data_loader_for_validation = prepare_data(
         augment_transforms, use_clahe, IMAGES_PATH, TRAIN_SET_PATH, VALIDATION_SET_PATH
     )
@@ -125,7 +126,8 @@ if __name__ == "__main__":
             validation_loader=data_loader_for_validation,
             class_weights=class_weights,
             NUM_EPOCHS=NUM_EPOCHS,
-            use_mixup=use_mixup
+            use_mixup=use_mixup,
+            threshold=threshold
         )
         train_losses, validation_losses, epochs = trainer.train_model()
         plot_loss(train_losses, validation_losses, epochs)

@@ -22,7 +22,9 @@ class Trainer:
         validation_loader,
         class_weights,
         NUM_EPOCHS: int,
-        use_mixup=False
+        use_mixup=False,
+        threshold=[0.3]*13
+        
     ):
         """Initialize the training loop
 
@@ -43,6 +45,7 @@ class Trainer:
         self.class_weights = class_weights
         self.NUM_EPOCHS = NUM_EPOCHS
         self.use_mixup = use_mixup
+        self.threshold = threshold
 
     def train_model(self):
         """Train the model, computing validation and training loss at every epoch,
@@ -120,10 +123,11 @@ class Trainer:
 
                 # load model and calculate + save thresholds
                 self.model = torch.load(MODEL_ROOT / f"{MODEL_NAME}.pt", weights_only=False)
-                thresholds = validation_loss_checker.calculate_optimal_threshold(self.model)
-                threshold_dict = {"thresholds": thresholds}
-                with open(MODEL_ROOT / "thresholds.json", 'w') as threshold_file:
-                    json.dump(threshold_dict, threshold_file)
+                if self.threshold == "optimal":
+                    thresholds = validation_loss_checker.calculate_optimal_threshold(self.model)
+                    threshold_dict = {"thresholds": thresholds}
+                    with open(MODEL_ROOT / "thresholds.json", 'w') as threshold_file:
+                        json.dump(threshold_dict, threshold_file)
 
                 return (train_losses, validation_losses, epoch_list)
 
@@ -133,10 +137,11 @@ class Trainer:
 
         # if training never stops still have to load the best model which may not be the latest one
         self.model = torch.load(MODEL_ROOT / f"{MODEL_NAME}.pt", weights_only=False)
-        thresholds = validation_loss_checker.calculate_optimal_threshold(self.model)
-        threshold_dict = {"thresholds": thresholds}
-        with open(MODEL_ROOT / "thresholds.json", 'w') as threshold_file:
-            json.dump(threshold_dict, threshold_file)
+        if self.threshold == "optimal":
+            thresholds = validation_loss_checker.calculate_optimal_threshold(self.model)
+            threshold_dict = {"thresholds": thresholds}
+            with open(MODEL_ROOT / "thresholds.json", 'w') as threshold_file:
+                json.dump(threshold_dict, threshold_file)
 
         print(f"training completed")
 
