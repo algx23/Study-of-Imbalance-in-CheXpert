@@ -11,6 +11,7 @@ SUBSET_PATH = "data/subset.csv"
 TRAIN_SET_PATH = "data/train.csv"
 VALIDATION_SET_PATH = "data/validation.csv"
 TEST_SET_PATH = "data/prepared_test.csv"
+MEAN_STD_PATH = "norm_const.json"
 
 # paths for saving things
 CSV_PATHS = Path(f"data/")

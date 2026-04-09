@@ -8,6 +8,7 @@ from torchvision.transforms import (
 import torch
 from PIL import Image
 from constants.control_variables import LABELS
+import json
 
 import cv2
 
@@ -26,11 +27,11 @@ class GradCam():
         - Adapted from TowardsDataScience: https://towardsdatascience.com/grad-cam-from-scratch-with-pytorch-hooks/
     """
 
-    def __init__(self, model, model_name, image_path):
+    def __init__(self, model, model_name, image_path, mean, std):
         self.model = model
 
-        self.mean = 0.5062857270240784
-        self.standard_deviation = 0.2867498937006307
+        self.mean = mean
+        self.standard_deviation = std
         self.transforms = Compose([
             Resize((224, 224)),
             ToTensor(),
@@ -125,5 +126,10 @@ gc_model = torch.load(gc_model_path, weights_only=False)
 # Retrieved 2026-04-05, License - CC BY-SA 4.0
 model_name = os.path.basename(os.path.dirname(gc_model_path))
 
-gradcam = GradCam(gc_model, model_name, image_path)
+with open("norm_const.json", "r") as f:
+    mean_std_data = json.load(f)
+mean = mean_std_data["mean"]
+standard_deviation = mean_std_data["std"]
+
+gradcam = GradCam(gc_model, model_name, image_path, mean, std)
 gradcam.compute_gradcam_heatmap()

@@ -1,7 +1,10 @@
 from constants.paths import (
     IMAGES_PATH,
     MODEL_ROOT,
+    MEAN_STD_PATH
 )
+import json
+import os
 
 
 from chexpert_dataset import ChexpertDataset
@@ -14,6 +17,7 @@ from torchvision.transforms import (
     ToTensor,
 )  # to resize all images
 
+from utils import calculate_mean_and_standard_deviation
 
 def prepare_data(
     augment_transforms, use_clahe, IMAGES_PATH, TRAIN_SET_PATH, VALIDATION_SET_PATH
@@ -48,10 +52,25 @@ def prepare_data(
 
     dataset_loader = DataLoader(train_dataset, batch_size=25, shuffle=True)
 
-    ####### TEMP: Temporarily hard code mean and std during testing
-    # mean, standard_deviation = calculate_mean_and_standard_deviation(dataset_loader)
-    mean = 0.5062857270240784
-    standard_deviation = 0.2867498937006307
+    calc_transforms = Compose([resize_transform, ToTensor()])
+    calc_train_dataset = ChexpertDataset(
+        TRAIN_SET_PATH, IMAGES_PATH, transform=calc_transforms
+    )
+    calc_loader = DataLoader(calc_train_dataset, batch_size=25, shuffle=True)
+
+    if os.path.exists(MEAN_STD_PATH):
+        with open(MEAN_STD_PATH, "r") as f:
+            mean_std_data = json.load(f)
+        mean = mean_std_data["mean"]
+        standard_deviation = mean_std_data["std"]
+
+    else:
+        mean, standard_deviation = calculate_mean_and_standard_deviation(calc_loader)
+        mean_std_dict = {"mean": mean, "std": standard_deviation}
+
+        with open(MEAN_STD_PATH, 'w') as norm_const_file:
+            json.dump(mean_std_dict, norm_const_file)
+        print(f"Calcd mean and std: {mean, standard_deviation}")
 
     print(f"mean = {mean}, standard deviation = {standard_deviation}")
 
@@ -123,8 +142,10 @@ def prepare_test_data(TEST_SET_PATH):
 
     test_dataset_loader = DataLoader(test_dataset, batch_size=25, shuffle=True)
 
-    mean = 0.5062857270240784
-    standard_deviation = 0.2867498937006307
+    with open(MEAN_STD_PATH, "r") as f:
+        mean_std_data = json.load(f)
+    mean = mean_std_data["mean"]
+    standard_deviation = mean_std_data["std"]
     print(f"Test Mean: {mean}, Test STD: {standard_deviation}")
 
     transforms = Compose(
