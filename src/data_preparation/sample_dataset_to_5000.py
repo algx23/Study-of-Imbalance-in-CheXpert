@@ -167,3 +167,23 @@ class DataSubsetter:
         test_df.to_csv(self.TEST_SET_PATH)
 
         return
+
+    def calculate_patient_overlap(self):
+        train_set = pd.read_csv(self.TRAIN_SET_PATH)
+        validation_set = pd.read_csv(self.VALIDATION_SET_PATH)
+        test_set = pd.read_csv(self.TEST_SET_PATH)
+
+        train_patient_ids = set(train_set["Path"].str.split("/").str[2])
+        val_patient_ids = set(validation_set["Path"].str.split("/").str[2])
+        test_patient_ids = set(test_set["Path"].str.split("/").str[2])
+
+        # % of patients in train-val
+        pct_train_val_overlap = len(train_patient_ids & val_patient_ids) /  len(val_patient_ids)
+        # % of patients that are in test that were seen in train or val
+        ids_in_train_and_val = train_patient_ids | val_patient_ids
+        pct_all_test_overlap = len(ids_in_train_and_val & test_patient_ids) /  len(test_patient_ids)
+
+        print(f"% of images that were in validation that are also in train: {pct_train_val_overlap * 100}")
+        print(f"% of images that were in either train or val that are also in test: {pct_all_test_overlap * 100}")
+        return
+
