@@ -5,6 +5,8 @@ will be saved
 from constants.control_variables import MODEL_NAME
 from pathlib import Path
 
+
+#IMAGES_PATH = "/content/"
 IMAGES_PATH = "D:/dataset fyp/"
 ORIGINAL_DATASET_PATH = "../train.csv"
 SUBSET_PATH = "data/subset.csv"

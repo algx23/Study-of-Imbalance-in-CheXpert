@@ -22,6 +22,8 @@ class EvaluationLoop:
         self.test_loader = test_loader
         self.model = model
         self.loss_fn = loss_fn
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
     def evaluate_model(self, thresholds):
         """Evalues the model, saves logits and calculates metrics"""
@@ -41,17 +43,20 @@ class EvaluationLoop:
         with torch.no_grad():
             for i, data in enumerate(self.test_loader):
                 images, labels = data
+                images = images.to(self.device)
+                labels = labels.to(self.device)
+
                 outputs = self.model(images)
-                all_outputs.extend(outputs.numpy())
+                all_outputs.extend(outputs.cpu().numpy())# needs to be moved to cpu on extending here because i save it later
                 loss = self.loss_fn(outputs, labels)
                 print(f"evaluation loss for batch {i+1}: {loss.item()}")
                 probability = torch.sigmoid(outputs)
-                all_probabilities.extend(probability.numpy())
+                all_probabilities.extend(probability.cpu().numpy())
 
-                predictions = (probability > torch.tensor(thresholds)).int()
+                predictions = (probability > torch.tensor(thresholds).to(self.device)).int()
 
-                all_labels_across_batches.extend(labels.numpy())
-                all_predictions_across_batches.extend(predictions.numpy())
+                all_labels_across_batches.extend(labels.cpu().numpy())
+                all_predictions_across_batches.extend(predictions.cpu().numpy())
 
         torch.save(all_labels_across_batches, f"{tensor_save_path}/truth_tensor.pt")
         torch.save(

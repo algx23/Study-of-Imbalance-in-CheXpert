@@ -10,7 +10,7 @@ from pathlib import Path
 import csv
 
 
-def calculate_mean_and_standard_deviation(dataloader):
+def calculate_mean_and_standard_deviation(dataloader, device):
     """
     get the mean pixel value, and standard deviation for the entire dataset
 
@@ -38,7 +38,7 @@ def calculate_mean_and_standard_deviation(dataloader):
     # this is the variance -> square root to get the standard deviation
     for train_features, train_labels in dataloader:
         # print(train_features.size()) # a batch of 25, 224x224 images [batch size, channels (1 because grayscale), height, width
-        train_features = train_features.to(dtype=float32)
+        train_features = train_features.to(device).to(dtype=float32)
         sum_pixel_vals += torch.mean(
             train_features
         )  # calculate the mean for every image in the batch - uses every value in the batch
@@ -50,7 +50,7 @@ def calculate_mean_and_standard_deviation(dataloader):
 
     # print(mean, standard_deviation)
 
-    return (mean, standard_deviation)
+    return (mean.item(), standard_deviation.item())
 
 
 def plot_loss(training_losses, validation_losses, epochs):
@@ -153,7 +153,7 @@ def calculate_class_freq_cbfl(TRAIN_SET_PATH):
 
     # (1-beta) / (1-beta^n_y)
 
-    beta = 0.999
+    beta = 0.99
     beta_class_weights = []
     for pos_neg_pair in class_frequencies:
         pos_weight = (1 - beta) / (1-beta**pos_neg_pair[0])

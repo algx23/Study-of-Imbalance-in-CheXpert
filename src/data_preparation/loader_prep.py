@@ -7,6 +7,7 @@ import json
 import os
 
 
+import torch
 from chexpert_dataset import ChexpertDataset
 from torch.utils.data import DataLoader
 from torchvision.utils import save_image
@@ -65,7 +66,9 @@ def prepare_data(
         standard_deviation = mean_std_data["std"]
 
     else:
-        mean, standard_deviation = calculate_mean_and_standard_deviation(calc_loader)
+
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        mean, standard_deviation = calculate_mean_and_standard_deviation(calc_loader, device)
         mean_std_dict = {"mean": mean, "std": standard_deviation}
 
         with open(MEAN_STD_PATH, 'w') as norm_const_file:
@@ -102,7 +105,7 @@ def prepare_data(
         VALIDATION_SET_PATH, IMAGES_PATH, transform=transforms
     )
     after_normalization_validation_loader = DataLoader(
-        after_normalization_validation_dataset, batch_size=25, shuffle=True
+        after_normalization_validation_dataset, batch_size=25, shuffle=False
     )
 
     # checking the after normalization dataset
@@ -140,7 +143,7 @@ def prepare_test_data(TEST_SET_PATH):
         TEST_SET_PATH, IMAGES_PATH, transform=resize_transform
     )
 
-    test_dataset_loader = DataLoader(test_dataset, batch_size=25, shuffle=True)
+    test_dataset_loader = DataLoader(test_dataset, batch_size=25, shuffle=False)
 
     with open(MEAN_STD_PATH, "r") as f:
         mean_std_data = json.load(f)
@@ -156,7 +159,7 @@ def prepare_test_data(TEST_SET_PATH):
         TEST_SET_PATH, IMAGES_PATH, transform=transforms
     )
     after_normalization_test_loader = DataLoader(
-        after_normalization_test_dataset, batch_size=25, shuffle=True
+        after_normalization_test_dataset, batch_size=25, shuffle=False
     )
 
     return after_normalization_test_loader

@@ -29,6 +29,8 @@ class ValidationLossChecker:
         self.stop_early = False
         self.best_metric = 0
         self.loss_function = loss_fn
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
     def compute_validation_metric(self, model):
         """Compute the validation loss on the validation set with the given model
@@ -43,20 +45,23 @@ class ValidationLossChecker:
         all_truth = []
         all_predictions = []
 
+        model.to(self.device)
         model.eval()
 
         with torch.no_grad():
             for i, data in enumerate(self.validation_loader):
                 images, labels = data
+                images = images.to(self.device)
+                labels = labels.to(self.device)
                 outputs = model(images)
 
-                all_truth.extend(labels)
+                all_truth.extend(labels.cpu().numpy())
 
                 probability = torch.sigmoid(outputs)
-                all_probabilities.extend(probability.numpy())
+                all_probabilities.extend(probability.cpu().numpy())
 
                 prediction = (probability > 0.3).int()
-                all_predictions.extend(prediction.numpy())
+                all_predictions.extend(prediction.cpu().numpy())
 
         validation_pr_auc = average_precision_score(
             y_true=all_truth, y_score=all_probabilities
@@ -111,19 +116,22 @@ class ValidationLossChecker:
         all_truth = []
         all_predictions = []
 
+        model.to(self.device)
         model.eval()
         with torch.no_grad():
             for i, data in enumerate(self.validation_loader):
                 images, labels = data
+                images = images.to(self.device)
+                labels = labels.to(self.device)
                 outputs = model(images)
 
-                all_truth.extend(labels)
+                all_truth.extend(labels.cpu().numpy())
 
                 probability = torch.sigmoid(outputs)
-                all_probabilities.extend(probability.numpy())
+                all_probabilities.extend(probability.cpu().numpy())
 
                 prediction = (probability > 0.3).int()
-                all_predictions.extend(prediction.numpy())
+                all_predictions.extend(prediction.cpu().numpy())
 
         best_thresholds = []
         # youden's jscore adapted from: https://machinelearningmastery.com/threshold-moving-for-imbalanced-classification/

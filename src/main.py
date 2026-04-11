@@ -36,8 +36,14 @@ from comparison_generator import generate_comparisons
 from custom_loss_fns.focal_loss import FocalLoss
 from custom_loss_fns.class_balanced_focal_loss import ClassBalancedFocalLoss
 import json
+import numpy as np
 
 if __name__ == "__main__":
+    # setting random seeds for reproducibility
+    np.random.seed(23)
+
+    torch.manual_seed(23)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     augment_transforms, use_weights, use_clahe, use_dropout, use_batch_norm, use_focal_loss, use_cbfl, use_mixup, threshold = (
         VARS_FOR_EXPERIMENT  # controls the model configuration -> whether dropout/bn/augmentations are used etc
     )
@@ -99,14 +105,19 @@ if __name__ == "__main__":
     data_loader_for_testing = prepare_test_data(TEST_SET_PATH)
 
     class_weights = calculate_class_weights(TRAIN_SET_PATH) if use_weights else None
+    # cant move if it is none -> baseline
+    if class_weights is not None:
+        class_weights = class_weights.to(device)
 
     if use_focal_loss:
         alpha = calculate_normalized_inverse_frequency_focal_loss(TRAIN_SET_PATH)
         print(f"alpha shape : {alpha.size()}")
+        alpha = alpha.to(device)
         gamma = 2 # as recommended by the paper
         loss_fn = FocalLoss(alpha, gamma)
     elif use_cbfl:
         beta = calculate_class_freq_cbfl(TRAIN_SET_PATH)
+        beta = beta.to(device)
         print(f"beta shape: {beta.size()}")
         gamma = 0.5
         loss_fn = ClassBalancedFocalLoss(beta=beta, gamma=gamma)
@@ -115,6 +126,7 @@ if __name__ == "__main__":
 
     if not os.path.exists(f"{MODEL_ROOT}/{MODEL_NAME}.pt"):
         model = BaselineModel(use_dropout=use_dropout, use_batch_norm=use_batch_norm)
+        model = model.to(device)
         optimizer = Adam(model.parameters(), lr=1e-4)
 
         print("no previous models, training now")
@@ -133,9 +145,10 @@ if __name__ == "__main__":
         plot_loss(train_losses, validation_losses, epochs)
     else:
         print("previous models found!")
-        model = torch.load(MODEL_ROOT / f"{MODEL_NAME}.pt", weights_only=False)
+        model = torch.load(MODEL_ROOT / f"{MODEL_NAME}.pt", weights_only=False, map_location=device)
 
     post_train_model = model
+    post_train_model.to(device)
     print(post_train_model)
 
     print("EVALUATION STARTING")

@@ -46,6 +46,8 @@ class Trainer:
         self.NUM_EPOCHS = NUM_EPOCHS
         self.use_mixup = use_mixup
         self.threshold = threshold
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
     def train_model(self):
         """Train the model, computing validation and training loss at every epoch,
@@ -86,9 +88,13 @@ class Trainer:
             self.model.train()
             for i, data in enumerate(self.train_loader):
                 images, labels = data
+                images = images.to(self.device)
+                labels = labels.to(self.device)
+
                 if self.use_mixup:
                     mixup = MixUp(num_classes=13) 
                     images, labels = mixup(images, labels)
+
                 self.optimizer.zero_grad()
                 outputs = self.model(images)
                 loss = self.loss_fn(outputs, labels)
@@ -122,7 +128,7 @@ class Trainer:
                 write_train_loss_to_file(epoch_list, train_losses, validation_losses)
 
                 # load model and calculate + save thresholds
-                self.model = torch.load(MODEL_ROOT / f"{MODEL_NAME}.pt", weights_only=False)
+                self.model = torch.load(MODEL_ROOT / f"{MODEL_NAME}.pt", weights_only=False, map_location=self.device)
                 if self.threshold == "optimal":
                     thresholds = validation_loss_checker.calculate_optimal_threshold(self.model)
                     threshold_dict = {"thresholds": thresholds}
@@ -136,7 +142,7 @@ class Trainer:
         write_train_loss_to_file(epoch_list, train_losses, validation_losses)
 
         # if training never stops still have to load the best model which may not be the latest one
-        self.model = torch.load(MODEL_ROOT / f"{MODEL_NAME}.pt", weights_only=False)
+        self.model = torch.load(MODEL_ROOT / f"{MODEL_NAME}.pt", weights_only=False, map_location=self.device)
         if self.threshold == "optimal":
             thresholds = validation_loss_checker.calculate_optimal_threshold(self.model)
             threshold_dict = {"thresholds": thresholds}
