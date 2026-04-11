@@ -53,21 +53,21 @@ def calculate_mean_and_standard_deviation(dataloader, device):
     return (mean.item(), standard_deviation.item())
 
 
-def plot_loss(training_losses, validation_losses, epochs):
+def plot_loss(training_losses, validation_ap, epochs):
     """Plots the train and validatoin losses to a graph and saves them
 
     Args:
         training_losses (List): list of train losses
-        validation_losses (list): list of validation losses
+        validation_ap (list): list of validation losses
         epochs (list): list of epoch numbers
     """
 
     plt.plot(epochs, training_losses, label="Training Loss")
-    plt.plot(epochs, validation_losses, label="Validation Loss")
+    plt.plot(epochs, validation_ap, label="Validation Average Precision")
     plt.ylabel("Average Loss / epoch")
     plt.xlabel("Number of epochs completed")
     plt.legend()
-    plt.title("Training and Validation losses over epochs")
+    plt.title("Training and Validation Average Precision over epochs")
     plt.savefig(f"{MODEL_ROOT}/{MODEL_NAME}_loss_graph.png")
     plt.clf()
 
@@ -106,27 +106,26 @@ def save_model(model):
     return
 
 
-def write_train_loss_to_file(epoch_list, loss_to_plot, validation_losses):
+def write_train_loss_to_file(epoch_list, loss_to_plot, validation_ap):
     """Write the train losses to a file
 
     Args:
         epoch_list (List): list of epoch numbers
         loss_to_plot (List): list of train losses
-        validation_losses (list): list of validation losses
+        validation_ap (list): list of validation losses
     """
     # add the losses to a file as logs
     loss_file = f"{TRAIN_DATA_PATH}/avg_epoch_loss.csv"
 
-    loss_headings = ["Epoch", "Train Loss", "Validation Loss"]
+    loss_headings = ["Epoch", "Train Loss", "Validation Average Precision"]
     with open(loss_file, "w", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(loss_headings)
-        for epoch, train_loss, val_loss in zip(
-            epoch_list, loss_to_plot, validation_losses
-        ):
-            writer.writerow([epoch, train_loss, val_loss])
+        for epoch, train_loss, val_ap in zip(epoch_list, loss_to_plot, validation_ap):
+            writer.writerow([epoch, train_loss, val_ap])
 
     return
+
 
 def calculate_normalized_inverse_frequency_focal_loss(TRAIN_SET_PATH):
     df = pd.read_csv(TRAIN_SET_PATH)
@@ -137,9 +136,12 @@ def calculate_normalized_inverse_frequency_focal_loss(TRAIN_SET_PATH):
 
     inverse_class_frequencies = torch.tensor(inverse_class_frequencies)
     print(f"pre normalized alpha: {inverse_class_frequencies}")
-    normalized_inverse_class_frequencies = inverse_class_frequencies / torch.sum(inverse_class_frequencies)
+    normalized_inverse_class_frequencies = inverse_class_frequencies / torch.sum(
+        inverse_class_frequencies
+    )
 
     return normalized_inverse_class_frequencies
+
 
 def calculate_class_freq_cbfl(TRAIN_SET_PATH):
     class_frequencies = []
@@ -156,13 +158,13 @@ def calculate_class_freq_cbfl(TRAIN_SET_PATH):
     beta = 0.99
     beta_class_weights = []
     for pos_neg_pair in class_frequencies:
-        pos_weight = (1 - beta) / (1-beta**pos_neg_pair[0])
+        pos_weight = (1 - beta) / (1 - beta ** pos_neg_pair[0])
         beta_class_weights.append(pos_weight)
-        
+
     # normalize so that each pair of weights sum to 13
     # x_i' = x_i(N/Sum(x_n))
     print(f"beta_class frequencies {beta_class_weights}")
-    normalized_beta_class_weights =[]
+    normalized_beta_class_weights = []
     for pos_weight in beta_class_weights:
         normalized_weight = pos_weight * (13 / (sum(beta_class_weights)))
         normalized_beta_class_weights.append(normalized_weight)

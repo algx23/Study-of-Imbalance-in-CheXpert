@@ -11,7 +11,6 @@ from custom_loss_fns.class_balanced_focal_loss import ClassBalancedFocalLoss
 from torchvision.transforms.v2 import MixUp
 
 
-
 class Trainer:
     def __init__(
         self,
@@ -23,8 +22,7 @@ class Trainer:
         class_weights,
         NUM_EPOCHS: int,
         use_mixup=False,
-        threshold=[0.3]*13
-        
+        threshold=[0.3] * 13,
     ):
         """Initialize the training loop
 
@@ -47,7 +45,6 @@ class Trainer:
         self.use_mixup = use_mixup
         self.threshold = threshold
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 
     def train_model(self):
         """Train the model, computing validation and training loss at every epoch,
@@ -92,7 +89,7 @@ class Trainer:
                 labels = labels.to(self.device)
 
                 if self.use_mixup:
-                    mixup = MixUp(num_classes=13) 
+                    mixup = MixUp(num_classes=13)
                     images, labels = mixup(images, labels)
 
                 self.optimizer.zero_grad()
@@ -124,31 +121,41 @@ class Trainer:
 
             if validation_loss_checker.training_should_stop(self.model):
                 print(f"NOT ENOUGH IMPROVEMENT FOUND, STOPPING TRAINING")
-                validation_losses = validation_loss_checker.current_metrics
-                write_train_loss_to_file(epoch_list, train_losses, validation_losses)
+                validation_ap = validation_loss_checker.current_metrics
+                write_train_loss_to_file(epoch_list, train_losses, validation_ap)
 
                 # load model and calculate + save thresholds
-                self.model = torch.load(MODEL_ROOT / f"{MODEL_NAME}.pt", weights_only=False, map_location=self.device)
+                self.model = torch.load(
+                    MODEL_ROOT / f"{MODEL_NAME}.pt",
+                    weights_only=False,
+                    map_location=self.device,
+                )
                 if self.threshold == "optimal":
-                    thresholds = validation_loss_checker.calculate_optimal_threshold(self.model)
+                    thresholds = validation_loss_checker.calculate_optimal_threshold(
+                        self.model
+                    )
                     threshold_dict = {"thresholds": thresholds}
-                    with open(MODEL_ROOT / "thresholds.json", 'w') as threshold_file:
+                    with open(MODEL_ROOT / "thresholds.json", "w") as threshold_file:
                         json.dump(threshold_dict, threshold_file)
 
-                return (train_losses, validation_losses, epoch_list)
+                return (train_losses, validation_ap, epoch_list)
 
         save_model(self.model)
-        validation_losses = validation_loss_checker.current_metrics
-        write_train_loss_to_file(epoch_list, train_losses, validation_losses)
+        validation_ap = validation_loss_checker.current_metrics
+        write_train_loss_to_file(epoch_list, train_losses, validation_ap)
 
         # if training never stops still have to load the best model which may not be the latest one
-        self.model = torch.load(MODEL_ROOT / f"{MODEL_NAME}.pt", weights_only=False, map_location=self.device)
+        self.model = torch.load(
+            MODEL_ROOT / f"{MODEL_NAME}.pt",
+            weights_only=False,
+            map_location=self.device,
+        )
         if self.threshold == "optimal":
             thresholds = validation_loss_checker.calculate_optimal_threshold(self.model)
             threshold_dict = {"thresholds": thresholds}
-            with open(MODEL_ROOT / "thresholds.json", 'w') as threshold_file:
+            with open(MODEL_ROOT / "thresholds.json", "w") as threshold_file:
                 json.dump(threshold_dict, threshold_file)
 
         print(f"training completed")
 
-        return (train_losses, validation_losses, epoch_list)
+        return (train_losses, validation_ap, epoch_list)

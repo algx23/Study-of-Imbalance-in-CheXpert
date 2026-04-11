@@ -26,23 +26,28 @@ class ClassBalancedFocalLoss(nn.Module):
         - Original Focal Loss Paper: https://arxiv.org/pdf/1708.02002
         - Class Balanced Focal Loss: https://arxiv.org/pdf/1901.05555
     """
+
     def __init__(self, beta, gamma):
         super().__init__()
         self.beta = beta
         self.gamma = gamma
         self.bce_loss = BCEWithLogitsLoss(reduction="none")
-        
 
     def forward(self, logits: Tensor, true_labels: Tensor):
 
         p = torch.sigmoid(logits)
         ce = self.bce_loss(logits, true_labels)
-        print(true_labels.shape)
+        # print(true_labels.shape)
         # compute the loss across all classes and then return it as a single value
         # so that it fits with my existing training loop
-        balanced_focal_loss = ce * self.beta * (
-            (true_labels * (1 - p) ** self.gamma
-            + (1 - true_labels) * p**self.gamma
-        ))
+        balanced_focal_loss = (
+            ce
+            * self.beta
+            * (
+                (
+                    true_labels * (1 - p) ** self.gamma
+                    + (1 - true_labels) * p**self.gamma
+                )
+            )
+        )
         return torch.mean(balanced_focal_loss)
-       

@@ -44,9 +44,17 @@ if __name__ == "__main__":
 
     torch.manual_seed(23)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    augment_transforms, use_weights, use_clahe, use_dropout, use_batch_norm, use_focal_loss, use_cbfl, use_mixup, threshold = (
-        VARS_FOR_EXPERIMENT  # controls the model configuration -> whether dropout/bn/augmentations are used etc
-    )
+    (
+        augment_transforms,
+        use_weights,
+        use_clahe,
+        use_dropout,
+        use_batch_norm,
+        use_focal_loss,
+        use_cbfl,
+        use_mixup,
+        threshold,
+    ) = VARS_FOR_EXPERIMENT  # controls the model configuration -> whether dropout/bn/augmentations are used etc
 
     # make the parent folder all of the logs, images, model will go into
     if MODEL_NAME == "NA":
@@ -113,7 +121,7 @@ if __name__ == "__main__":
         alpha = calculate_normalized_inverse_frequency_focal_loss(TRAIN_SET_PATH)
         print(f"alpha shape : {alpha.size()}")
         alpha = alpha.to(device)
-        gamma = 2 # as recommended by the paper
+        gamma = 2  # as recommended by the paper
         loss_fn = FocalLoss(alpha, gamma)
     elif use_cbfl:
         beta = calculate_class_freq_cbfl(TRAIN_SET_PATH)
@@ -122,7 +130,7 @@ if __name__ == "__main__":
         gamma = 0.5
         loss_fn = ClassBalancedFocalLoss(beta=beta, gamma=gamma)
     else:
-        loss_fn= BCEWithLogitsLoss(pos_weight=class_weights)
+        loss_fn = BCEWithLogitsLoss(pos_weight=class_weights)
 
     if not os.path.exists(f"{MODEL_ROOT}/{MODEL_NAME}.pt"):
         model = BaselineModel(use_dropout=use_dropout, use_batch_norm=use_batch_norm)
@@ -139,13 +147,15 @@ if __name__ == "__main__":
             class_weights=class_weights,
             NUM_EPOCHS=NUM_EPOCHS,
             use_mixup=use_mixup,
-            threshold=threshold
+            threshold=threshold,
         )
-        train_losses, validation_losses, epochs = trainer.train_model()
-        plot_loss(train_losses, validation_losses, epochs)
+        train_losses, validation_ap, epochs = trainer.train_model()
+        plot_loss(train_losses, validation_ap, epochs)
     else:
         print("previous models found!")
-        model = torch.load(MODEL_ROOT / f"{MODEL_NAME}.pt", weights_only=False, map_location=device)
+        model = torch.load(
+            MODEL_ROOT / f"{MODEL_NAME}.pt", weights_only=False, map_location=device
+        )
 
     post_train_model = model
     post_train_model.to(device)
@@ -155,11 +165,13 @@ if __name__ == "__main__":
     eval_loop = EvaluationLoop(data_loader_for_testing, post_train_model, loss_fn)
     # get the per-class thresholds for the model
     if threshold == "optimal":
-        with open(MODEL_ROOT / "thresholds.json", 'r', encoding="utf-8") as threshold_file:
+        with open(
+            MODEL_ROOT / "thresholds.json", "r", encoding="utf-8"
+        ) as threshold_file:
             data = json.load(threshold_file)
             threshold = data["thresholds"]
     else:
-        threshold = [0.3]*13
+        threshold = [0.3] * 13
     eval_loop.evaluate_model(threshold)
 
     generate_comparisons("results")
