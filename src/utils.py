@@ -143,7 +143,44 @@ def calculate_normalized_inverse_frequency_focal_loss(TRAIN_SET_PATH):
     return normalized_inverse_class_frequencies
 
 
+# def calculate_class_freq_cbfl(TRAIN_SET_PATH):
+#     # different to the paper
+#     # use n{y=1} for the beta weight so that the number of positives is what influences the overall weight
+#     # then i apply this to the entire loss, to weight the entire class - this should increase
+#     # the performance on the minority class in terms of recall
+#     class_frequencies = []
+#     df = pd.read_csv(TRAIN_SET_PATH)
+
+#     for label in LABELS:
+#         n_pos = df[label].sum()
+#         n_neg = df.shape[0] - n_pos
+
+#         class_frequencies.append([n_pos, n_neg])
+
+#     # (1-beta) / (1-beta^n_y)
+
+#     beta = 0.99
+#     beta_class_weights = []
+#     for pos_neg_pair in class_frequencies:
+#         pos_weight = (1 - beta) / (1 - beta ** pos_neg_pair[0])
+#         beta_class_weights.append(pos_weight)
+
+#     # normalize so that each pair of weights sum to 13
+#     # x_i' = x_i(N/Sum(x_n))
+#     print(f"beta_class frequencies {beta_class_weights}")
+#     normalized_beta_class_weights = []
+#     for pos_weight in beta_class_weights:
+#         normalized_weight = pos_weight * (13 / (sum(beta_class_weights)))
+#         normalized_beta_class_weights.append(normalized_weight)
+
+#     return torch.tensor(normalized_beta_class_weights)
+
+
 def calculate_class_freq_cbfl(TRAIN_SET_PATH):
+    # different to the paper
+    # use n{y=1} for the beta weight so that the number of positives is what influences the overall weight
+    # then i apply this to the entire loss, to weight the entire class - this should increase
+    # the performance on the minority class in terms of recall
     class_frequencies = []
     df = pd.read_csv(TRAIN_SET_PATH)
 
@@ -159,14 +196,19 @@ def calculate_class_freq_cbfl(TRAIN_SET_PATH):
     beta_class_weights = []
     for pos_neg_pair in class_frequencies:
         pos_weight = (1 - beta) / (1 - beta ** pos_neg_pair[0])
-        beta_class_weights.append(pos_weight)
+        neg_weight = (1 - beta) / (1 - beta ** pos_neg_pair[1])
+        beta_class_weights.append([pos_weight, neg_weight])
 
     # normalize so that each pair of weights sum to 13
     # x_i' = x_i(N/Sum(x_n))
     print(f"beta_class frequencies {beta_class_weights}")
     normalized_beta_class_weights = []
-    for pos_weight in beta_class_weights:
-        normalized_weight = pos_weight * (13 / (sum(beta_class_weights)))
-        normalized_beta_class_weights.append(normalized_weight)
+    for pair in beta_class_weights:
+        pos_weight, neg_weight = pair[0], pair[1]
+        normalized_pos_weight = pos_weight * (2 / (sum([pos_weight, neg_weight])))
+        normalized_neg_weight = neg_weight * (2 / (sum([pos_weight, neg_weight])))
+        normalized_beta_class_weights.append(
+            [normalized_pos_weight, normalized_neg_weight]
+        )
 
     return torch.tensor(normalized_beta_class_weights)

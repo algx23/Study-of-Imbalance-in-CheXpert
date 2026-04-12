@@ -17,11 +17,6 @@ class ClassBalancedFocalLoss(nn.Module):
 
     Additionally, these "Weights" are normalized such that
     \\Sum alpha_i = N_c where N_c is the number of classes.
-
-    Since we use the BCEWithLogitsLoss and a Linear layer, each
-    Wpos and Wneg will sum to 2, as each classification is a binary
-    classification of C_i V 'C_i.
-
     References:
         - Original Focal Loss Paper: https://arxiv.org/pdf/1708.02002
         - Class Balanced Focal Loss: https://arxiv.org/pdf/1901.05555
@@ -37,17 +32,10 @@ class ClassBalancedFocalLoss(nn.Module):
 
         p = torch.sigmoid(logits)
         ce = self.bce_loss(logits, true_labels)
-        # print(true_labels.shape)
-        # compute the loss across all classes and then return it as a single value
-        # so that it fits with my existing training loop
-        balanced_focal_loss = (
-            ce
-            * self.beta
-            * (
-                (
-                    true_labels * (1 - p) ** self.gamma
-                    + (1 - true_labels) * p**self.gamma
-                )
-            )
+
+        balanced_focal_loss = ce * (
+            self.beta[:, 0] * true_labels * (1 - p) ** self.gamma
+            + self.beta[:, 1] * (1 - true_labels) * p**self.gamma
         )
+
         return torch.mean(balanced_focal_loss)
