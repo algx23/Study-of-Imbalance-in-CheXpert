@@ -9,6 +9,7 @@ from sklearn.metrics import (
     precision_recall_curve,
     average_precision_score,
 )
+from matplotlib import colormaps
 
 import matplotlib.pyplot as plt
 
@@ -80,6 +81,7 @@ class MetricCalculator:
         all_pr_curve_fig = plt.figure(figsize=(10, 6))
         comp_pr_curve_fig = plt.figure(figsize=(10, 6))
         avg_precision_scores = []
+        colour = plt.get_cmap("tab20")
 
         for i in range(len(LABELS)):
             if LABELS[i] in CHEXPERT_COMP_LABELS:
@@ -87,13 +89,13 @@ class MetricCalculator:
                 precision, recall, thresholds = precision_recall_curve(
                     np.array(self.truth)[:, i], np.array(self.probabilities)[:, i]
                 )
-                plt.plot(recall, precision, label=f"{LABELS[i]}")
+                plt.plot(recall, precision, label=f"{LABELS[i]}", color=colour(i))
 
             plt.figure(all_pr_curve_fig.number)
             precision, recall, thresholds = precision_recall_curve(
                 np.array(self.truth)[:, i], np.array(self.probabilities)[:, i]
             )
-            plt.plot(recall, precision, label=f"{LABELS[i]}")
+            plt.plot(recall, precision, label=f"{LABELS[i]}", color=colour(i))
 
             # compute the average precision for each label
             # and add it as a column to the classification report
