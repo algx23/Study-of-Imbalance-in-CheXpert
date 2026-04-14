@@ -8,6 +8,7 @@ from tabulate import *
 import os
 import json
 
+
 def prepare_image_for_classification(image_path):
     """Takes a path to an image and classifies it using an existing model,
     specified by the --name parameter when running the file
@@ -21,8 +22,18 @@ def prepare_image_for_classification(image_path):
     Returns:
         Tensor: image in the shape (1, 1, 224, 224) as the model expects a batch of images
     """
-    mean = 0.5062857270240784
-    standard_deviation = 0.2867498937006307
+    norm_const_file_path = "norm_const.json"
+    if os.path.exists(norm_const_file_path):
+        with open(norm_const_file_path, "r") as norm_const_file:
+            norm_const_file_data = json.load(norm_const_file)
+            mean = norm_const_file_data["mean"]
+            standard_deviation = norm_const_file_data["std"]
+    else:
+        # computed from a previous run - the norm const file contains the same values as it was computed on an earlier subset
+        # but the difference is not that large, and since the mean/std is very similar whether it is calculated or not
+        # this is the fallback - ideally i wouldve liked to have done all experiments with the calculated mean
+        mean = 0.5062857270240784
+        standard_deviation = 0.2867498937006307
 
     TRANSFORMS = Compose(
         [Resize((224, 224)), ToTensor(), Normalize(mean, standard_deviation)]
@@ -40,28 +51,34 @@ def prepare_image_for_classification(image_path):
     return image
 
 
-def make_classification(model, image, threshold):
+def make_classification(model, image, threshold, device):
     """Classifies a given image based on the chexpert labels
     Args: image_path [str]: The file path of the image to be classified
 
     Returns: table showing labels, the classification and confidence label
     """
-    classifications, HEADERS = [], ["Label", "Prediction", "Confidence"]
+    classifications, HEADERS = [], [
+        "Class Label",
+        " Model Prediction",
+        "Confidence that the image represents the positive class (%)",
+    ]
 
     model.eval()
-    print(f"Threshold used: {threshold}")
+    print(
+        f"Decision Thresholds used for each class - If the model is more confident than this %, they will predict positive {threshold}"
+    )
     with torch.no_grad():
         output = model(image)
         confidence_score = torch.sigmoid(
             output
         )  # turns the raw output into a range 0 - 1
 
-        prediction = (confidence_score > torch.tensor(threshold)).int()
+        prediction = (confidence_score > torch.tensor(threshold).to(device)).int()
 
         for label, prediction, confidence_score in zip(
             LABELS, prediction.tolist()[0], confidence_score.tolist()[0]
         ):
-            classifications.append([label, prediction, confidence_score])
+            classifications.append([label, prediction, confidence_score * 100])
 
     classification_table = tabulate(classifications, headers=HEADERS)
 
@@ -69,19 +86,23 @@ def make_classification(model, image, threshold):
 
 
 def main():
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     # Check if the model name they provided exists already or not
-    path_to_model = input("Enter the path to the model you would like to run inference on: \n")
+    path_to_model = input(
+        "Enter the path to the model you would like to run inference on: \n"
+    )
 
     if not os.path.exists(path_to_model):
-        results_folder_exists = os.path.exists("results")
         error_msg = (
-            f"Model not found at: {path_to_model}. "
+            f"Model not found at: {path_to_model}. Please make sure you have provided the full path to the model. E.g. From C:/ in windows."
             f"You could train the model using py main.py --name {os.path.basename(os.path.dirname(path_to_model))}"
             f"Then, return to this script, and provide the model path from the 'results' folder."
         )
         raise FileNotFoundError(error_msg)
 
     model = torch.load(path_to_model, weights_only=False)
+    model = model.to(device)
 
     while True:
         try:
@@ -89,19 +110,20 @@ def main():
                 "Please Enter the path of the image you would like to classify: \n"
             )
             image = prepare_image_for_classification(image_path)
+            image = image.to(device)
 
             parent_of_model = Path(path_to_model).parent
-            threshold_file = parent_of_model / "thresholds.json"
-            if threshold_file.is_file():
-                with open(threshold_file, 'r', encoding="utf-8") as threshold_file:
+            threshold_file_path = parent_of_model / "thresholds.json"
+            if threshold_file_path.is_file():
+                with open(threshold_file_path, "r", encoding="utf-8") as threshold_file:
                     data = json.load(threshold_file)
                     threshold = data["thresholds"]
 
             else:
-                threshold = [0.3]*13
+                threshold = [0.3] * 13
 
             # if the model and image exists, produce the classification
-            print(make_classification(model, image, threshold=threshold))
+            print(make_classification(model, image, threshold=threshold, device=device))
 
             break
         except TypeError as e:
