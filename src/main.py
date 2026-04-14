@@ -41,8 +41,9 @@ import numpy as np
 if __name__ == "__main__":
     # setting random seeds for reproducibility
     np.random.seed(23)
-
     torch.manual_seed(23)
+    torch.use_deterministic_algorithms(True)
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     (
         augment_transforms,
