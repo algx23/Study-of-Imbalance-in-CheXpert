@@ -1,8 +1,6 @@
-from constants.paths import (
-    IMAGES_PATH,
-    MODEL_ROOT,
-    MEAN_STD_PATH
-)
+from matplotlib import pyplot as plt
+
+from constants.paths import IMAGES_PATH, MEAN_STD_PATH
 import json
 import os
 
@@ -20,8 +18,14 @@ from torchvision.transforms import (
 
 from utils import calculate_mean_and_standard_deviation
 
+
 def prepare_data(
-    augment_transforms, use_clahe, IMAGES_PATH, TRAIN_SET_PATH, VALIDATION_SET_PATH
+    augment_transforms,
+    use_clahe,
+    IMAGES_PATH,
+    TRAIN_SET_PATH,
+    VALIDATION_SET_PATH,
+    model_root_dir,
 ):
     """Prepare the train and validatoin dataloaders for use in training
 
@@ -41,22 +45,14 @@ def prepare_data(
     train_dataset = ChexpertDataset(
         TRAIN_SET_PATH, IMAGES_PATH, transform=resize_transform
     )
-    validation_dataset = ChexpertDataset(
-        VALIDATION_SET_PATH, IMAGES_PATH, transform=resize_transform
-    )
 
     print(f"dataset size: {train_dataset.__len__()}")
-
-    # saving one image before and after transforms
-    before_transform_img, _ = train_dataset[0]
-    before_transform_img.save(f"{MODEL_ROOT}/before.png")
-
-    dataset_loader = DataLoader(train_dataset, batch_size=25, shuffle=True)
 
     calc_transforms = Compose([resize_transform, ToTensor()])
     calc_train_dataset = ChexpertDataset(
         TRAIN_SET_PATH, IMAGES_PATH, transform=calc_transforms
     )
+
     calc_loader = DataLoader(calc_train_dataset, batch_size=25, shuffle=True)
 
     if os.path.exists(MEAN_STD_PATH):
@@ -68,10 +64,12 @@ def prepare_data(
     else:
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        mean, standard_deviation = calculate_mean_and_standard_deviation(calc_loader, device)
+        mean, standard_deviation = calculate_mean_and_standard_deviation(
+            calc_loader, device
+        )
         mean_std_dict = {"mean": mean, "std": standard_deviation}
 
-        with open(MEAN_STD_PATH, 'w') as norm_const_file:
+        with open(MEAN_STD_PATH, "w") as norm_const_file:
             json.dump(mean_std_dict, norm_const_file)
         print(f"Calcd mean and std: {mean, standard_deviation}")
 
@@ -120,9 +118,12 @@ def prepare_data(
     # checking the data is loaded - from PyTorch DataLoader Documentation and save an image
     # after transforms are applied
     train_features, train_labels = next(iter(after_normalization_train_loader))
-    save_image(train_features[0], f"{MODEL_ROOT}/after.png")
     print(f"Feature shape: {train_features.size()} ")
     print(f"label batch shape: {train_labels.size()}")
+
+    show_before_after_augments(
+        train_dataset, after_normalization_train_dataset, model_root_dir
+    )
 
     return after_normalization_train_loader, after_normalization_validation_loader
 
@@ -163,3 +164,32 @@ def prepare_test_data(TEST_SET_PATH):
     )
 
     return after_normalization_test_loader
+
+
+def show_before_after_augments(before_dataloader, after_dataloader, model_root_dir):
+
+    fig, axis = plt.subplots(nrows=2, ncols=5, figsize=(15, 6))
+
+    before_loader_iterator = iter(before_dataloader)
+    after_loader_iterator = iter(after_dataloader)
+
+    for i in range(5):  # 5 images
+        before_batch, _ = next(before_loader_iterator)
+        after_batch, _ = next(after_loader_iterator)
+
+        before_image = before_batch
+        after_image = after_batch.squeeze()
+
+        after_image = after_image.cpu()
+
+        axis[0][i].axis("off")
+        axis[1][i].axis("off")
+        axis[0][i].imshow(before_image, cmap="bone")
+        axis[1][i].imshow(after_image, cmap="bone")
+
+    fig.suptitle(
+        "Examples of Different images before (top row) and after augmentation (bottom row)"
+    )
+
+    plt.savefig(model_root_dir / "Augmentation-Normalization-Effect.svg")
+    plt.close()

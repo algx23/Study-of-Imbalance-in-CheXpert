@@ -1,13 +1,18 @@
 from torch.nn import BCEWithLogitsLoss
 import torch
 from utils import save_model
-from sklearn.metrics import average_precision_score,roc_curve, precision_recall_curve
+from sklearn.metrics import average_precision_score, roc_curve, precision_recall_curve
 import numpy as np
 
 
-class ValidationLossChecker:
+class ValidationMetricCalculator:
     def __init__(
-        self, min_improvement, epochs_to_wait, validation_loader, class_weights, loss_fn
+        self,
+        best_model_save_path,
+        min_improvement,
+        epochs_to_wait,
+        validation_loader,
+        loss_fn,
     ):
         """Initialze the loss checker to check loss on validation set at the end of every epoch
 
@@ -20,6 +25,7 @@ class ValidationLossChecker:
         self.current_metrics = []
         self.epoch_of_saved_model = 0
 
+        self.best_model_save_path = best_model_save_path
         self.min_improvement = min_improvement
         self.epochs_to_wait = epochs_to_wait
         self.num_epochs_no_gain = 0
@@ -30,7 +36,6 @@ class ValidationLossChecker:
         self.best_metric = 0
         self.loss_function = loss_fn
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 
     def compute_validation_metric(self, model):
         """Compute the validation loss on the validation set with the given model
@@ -85,7 +90,9 @@ class ValidationLossChecker:
             self.best_metric = current_metric
             # if there is a improvement, reset the counter
             self.num_epochs_no_gain = 0
-            save_model(model)  # save the model with the best loss
+            save_model(
+                model, save_path=self.best_model_save_path
+            )  # save the model with the best loss
             self.epoch_of_saved_model += 1
         else:  # not enough gain to constitute a new best loss
             self.num_epochs_no_gain += 1
@@ -138,8 +145,13 @@ class ValidationLossChecker:
         # f1 score maximization to find the best threshold
         # https://www.sciencedirect.com/science/article/pii/S2214579615000611
         for i in range(13):
-            precision, recall, thresholds = precision_recall_curve( y_true=np.array(all_truth)[:,i], y_score=np.array(all_probabilities)[:,i])
-            f1_scores = (2 * recall * precision) / (recall + precision + 1e-7) # 1e-7 in case its 0
+            precision, recall, thresholds = precision_recall_curve(
+                y_true=np.array(all_truth)[:, i],
+                y_score=np.array(all_probabilities)[:, i],
+            )
+            f1_scores = (2 * recall * precision) / (
+                recall + precision + 1e-7
+            )  # 1e-7 in case its 0
             index_of_max_f1_score = np.argmax(f1_scores)
             best_threshold_for_class = thresholds[index_of_max_f1_score]
             best_thresholds.append(float(best_threshold_for_class))

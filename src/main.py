@@ -1,33 +1,31 @@
 import os
 from datetime import datetime
+from pathlib import Path
 
 import torch
 
 from torch.nn import BCEWithLogitsLoss
 from torch.optim import Adam
 
-from constants.control_variables import (
-    LABELS,
-    MODEL_NAME,
-    NUM_EPOCHS,
-    VARS_FOR_EXPERIMENT,
-)
+from RunPathHolder import RunPathHolder, setup_folders
 from constants.paths import (
-    IMAGES_PATH,
-    MODEL_ROOT,
     ORIGINAL_DATASET_PATH,
+    IMAGES_PATH,
     TEST_SET_PATH,
     TRAIN_SET_PATH,
     VALIDATION_SET_PATH,
-    setup_folders,
+    CSV_PATHS,
+    # setup_folders,
 )
+
+from constants.control_variables import LABELS, NUM_EPOCHS
 from data_preparation import DataSubsetter, prepare_data, prepare_test_data
 from evaluate import EvaluationLoop
+from experiment_utils.arg_parser import parse_arguments
 from model import BaselineModel
 from trainer import Trainer
 from utils import (
     calculate_class_weights,
-    plot_loss,
     calculate_normalized_inverse_frequency_focal_loss,
     calculate_class_freq_cbfl,
 )
@@ -38,38 +36,23 @@ from custom_loss_fns.class_balanced_focal_loss import ClassBalancedFocalLoss
 import json
 import numpy as np
 
-if __name__ == "__main__":
+
+def make_reproducible():
     # setting random seeds for reproducibility
     np.random.seed(23)
     torch.manual_seed(23)
     torch.use_deterministic_algorithms(True)
+    torch.backends.cudnn.benchmark = False
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    (
-        augment_transforms,
-        use_weights,
-        use_clahe,
-        use_dropout,
-        use_batch_norm,
-        use_focal_loss,
-        use_cbfl,
-        use_mixup,
-        threshold,
-    ) = VARS_FOR_EXPERIMENT  # controls the model configuration -> whether dropout/bn/augmentations are used etc
 
-    # make the parent folder all of the logs, images, model will go into
-    if MODEL_NAME == "NA":
-        print(f"Set a model name with the --name flag for training")
-        exit(1)
-
-    setup_folders()
-
-    print(f"Evaluating Model {MODEL_NAME}")
-    print(f"USE DROPOUT: {use_dropout}")
-    print(f"CLASS WEIGHTS USED {use_weights}")
-    print(f"BATCH NORM USED:  {use_batch_norm}")
-    print(f"Focal Loss USED: {use_focal_loss}")
-    print(f"START TIME {datetime.now()}")
+def check_data_exists(
+    ORIGINAL_DATASET_PATH,
+    TRAIN_SET_PATH,
+    VALIDATION_SET_PATH,
+    TEST_SET_PATH,
+    LABELS,
+    CSV_PATHS,
+):
 
     subsetter = DataSubsetter(
         ORIGINAL_DATASET_PATH,
@@ -77,6 +60,7 @@ if __name__ == "__main__":
         VALIDATION_SET_PATH,
         TEST_SET_PATH,
         LABELS,
+        CSV_PATHS,
     )
 
     # check if the train.csv from which the train/val subset is created exists - if not prompt to download
@@ -106,23 +90,22 @@ if __name__ == "__main__":
         print("creating test dataset now")
         subsetter.create_test_data_csv()
 
+    subsetter.calculate_natural_label_coocurrance()
     subsetter.calculate_patient_overlap()
+    subsetter.plot_imbalance()
 
-    dataloader_for_training, data_loader_for_validation = prepare_data(
-        augment_transforms, use_clahe, IMAGES_PATH, TRAIN_SET_PATH, VALIDATION_SET_PATH
-    )
-    data_loader_for_testing = prepare_test_data(TEST_SET_PATH)
 
+def get_loss_function(use_weights, focal_loss_gamma, use_cbfl):
     class_weights = calculate_class_weights(TRAIN_SET_PATH) if use_weights else None
     # cant move if it is none -> baseline
     if class_weights is not None:
         class_weights = class_weights.to(device)
 
-    if use_focal_loss:
+    if focal_loss_gamma is not None:
         alpha = calculate_normalized_inverse_frequency_focal_loss(TRAIN_SET_PATH)
         print(f"alpha shape : {alpha.size()}")
         alpha = alpha.to(device)
-        gamma = 2  # as recommended by the paper
+        gamma = focal_loss_gamma  # as recommended by the paper
         loss_fn = FocalLoss(alpha, gamma)
     elif use_cbfl:
         beta = calculate_class_freq_cbfl(TRAIN_SET_PATH)
@@ -133,43 +116,107 @@ if __name__ == "__main__":
     else:
         loss_fn = BCEWithLogitsLoss(pos_weight=class_weights)
 
-    if not os.path.exists(f"{MODEL_ROOT}/{MODEL_NAME}.pt"):
+    return loss_fn
+
+
+if __name__ == "__main__":
+    make_reproducible()
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    EXPERIMENT_ROOT, MODEL_NAME, *VARS_FOR_EXPERIMENT = parse_arguments()
+
+    (
+        augment_transforms,
+        use_weights,
+        use_clahe,
+        use_dropout,
+        use_batch_norm,
+        focal_loss_gamma,
+        use_cbfl,
+        use_mixup,
+        threshold,
+    ) = VARS_FOR_EXPERIMENT  # controls the model configuration -> whether dropout/bn/augmentations are used etc
+
+    run_specific_paths = RunPathHolder(
+        experiment_name=EXPERIMENT_ROOT, model_name=MODEL_NAME
+    )
+
+    setup_folders(run_path_holder=run_specific_paths, csv_paths=CSV_PATHS)
+
+    check_data_exists(
+        ORIGINAL_DATASET_PATH,
+        TRAIN_SET_PATH,
+        VALIDATION_SET_PATH,
+        TEST_SET_PATH,
+        LABELS,
+        CSV_PATHS,
+    )
+
+    # make the parent folder all of the logs, images, model will go into
+    if MODEL_NAME == "NA":
+        print(f"Set a model name with the --name flag for training")
+        exit(1)
+
+    print(f"Evaluating Model {MODEL_NAME}")
+    print(f"USE DROPOUT: {use_dropout}")
+    print(f"CLASS WEIGHTS USED {use_weights}")
+    print(f"BATCH NORM USED:  {use_batch_norm}")
+    print(f"Focal Loss GAMMA if Used: {focal_loss_gamma}")
+    print(f"START TIME {datetime.now()}")
+
+    dataloader_for_training, data_loader_for_validation = prepare_data(
+        augment_transforms,
+        use_clahe,
+        IMAGES_PATH,
+        TRAIN_SET_PATH,
+        VALIDATION_SET_PATH,
+        run_specific_paths.model_root,
+    )
+    data_loader_for_testing = prepare_test_data(TEST_SET_PATH)
+
+    loss_fn = get_loss_function(
+        use_weights,
+        focal_loss_gamma,
+        use_cbfl,
+    )
+    model_path = run_specific_paths.model_root / f"{MODEL_NAME}.pt"
+    if not os.path.exists(model_path):
         model = BaselineModel(use_dropout=use_dropout, use_batch_norm=use_batch_norm)
         model = model.to(device)
         optimizer = Adam(model.parameters(), lr=1e-4)
 
         print("no previous models, training now")
         trainer = Trainer(
-            model,
+            path_holder=run_specific_paths,
+            model=model,
             optimizer=optimizer,
             loss_fn=loss_fn,
             train_loader=dataloader_for_training,
             validation_loader=data_loader_for_validation,
-            class_weights=class_weights,
             NUM_EPOCHS=NUM_EPOCHS,
             use_mixup=use_mixup,
             threshold=threshold,
         )
-        train_losses, validation_ap, epochs = trainer.train_model()
-        plot_loss(train_losses, validation_ap, epochs)
+        trainer.train_model()
+
     else:
         print("previous models found!")
-        model = torch.load(
-            MODEL_ROOT / f"{MODEL_NAME}.pt", weights_only=False, map_location=device
-        )
+        model = torch.load(model_path, weights_only=False, map_location=device)
 
-    post_train_model = model
-    post_train_model.to(device)
-    print(post_train_model)
+    model.to(device)
+    print(model)
 
     print("EVALUATION STARTING")
-    eval_loop = EvaluationLoop(data_loader_for_testing, post_train_model, loss_fn)
+    eval_loop = EvaluationLoop(
+        run_specific_paths, data_loader_for_testing, model, loss_fn
+    )
     # get the per-class thresholds for the model
+    # if the file exists, use optimal thersholds, otherwise don't
+    # guards against using the --fixed flag by accident
+    threshold_filepath = run_specific_paths.model_root / "thresholds.json"
     if threshold == "optimal":
-        if os.path.exists(MODEL_ROOT / "thresholds.json"):
-            with open(
-                MODEL_ROOT / "thresholds.json", "r", encoding="utf-8"
-            ) as threshold_file:
+        if os.path.exists(threshold_filepath):
+            with open(threshold_filepath, "r", encoding="utf-8") as threshold_file:
                 data = json.load(threshold_file)
                 threshold = data["thresholds"]
         else:
@@ -178,6 +225,5 @@ if __name__ == "__main__":
         threshold = [0.3] * 13
     eval_loop.evaluate_model(threshold)
 
-    # generate_comparisons("results")
     print(f"Finished Evaluating {MODEL_NAME}")
     print(f"FINISH TIME {datetime.now()}")

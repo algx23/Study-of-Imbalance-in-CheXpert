@@ -1,8 +1,7 @@
 import torch
 import json
-from constants.control_variables import MODEL_NAME
-from constants.paths import MODEL_ROOT
-from validation_loss_checker import ValidationLossChecker
+from RunPathHolder import RunPathHolder
+from validation_metric_checker import ValidationMetricCalculator
 from utils import write_train_loss_to_file, save_model
 from torch.nn import BCEWithLogitsLoss
 from custom_loss_fns.focal_loss import FocalLoss
@@ -14,12 +13,12 @@ from torchvision.transforms.v2 import MixUp
 class Trainer:
     def __init__(
         self,
+        path_holder: RunPathHolder,
         model,
         optimizer,
         loss_fn: BCEWithLogitsLoss | FocalLoss | ClassBalancedFocalLoss,
         train_loader,
         validation_loader,
-        class_weights,
         NUM_EPOCHS: int,
         use_mixup=False,
         threshold=[0.3] * 13,
@@ -35,16 +34,23 @@ class Trainer:
             class_weights (Tensor): Tensor of class weights to be passed through when computing validation loss
             NUM_EPOCHS (int): max number of epochs to train
         """
+        self.path_holder = path_holder
         self.model = model
         self.optimizer = optimizer
         self.loss_fn = loss_fn
         self.train_loader = train_loader
         self.validation_loader = validation_loader
-        self.class_weights = class_weights
         self.NUM_EPOCHS = NUM_EPOCHS
         self.use_mixup = use_mixup
         self.threshold = threshold
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        self.model_path = (
+            self.path_holder.model_root / f"{self.path_holder.model_name}.pt"
+        )
+        self.loss_filepath = (
+            self.path_holder.train_data_path / "avg_train_loss_val_prauc_per_epoch.csv"
+        )
 
     def train_model(self):
         """Train the model, computing validation and training loss at every epoch,
@@ -55,15 +61,13 @@ class Trainer:
             as well as the epoch number to be saved to a file and to be plotted
         """
 
-        validation_loss_checker = ValidationLossChecker(
+        validation_metric_checker = ValidationMetricCalculator(
+            best_model_save_path=self.model_path,
             min_improvement=0.0001,
             epochs_to_wait=10,
             validation_loader=self.validation_loader,
-            class_weights=self.class_weights,
             loss_fn=self.loss_fn,
         )
-
-        print(type(self.loss_fn))
 
         if isinstance(self.loss_fn, BCEWithLogitsLoss):
             print(f"BCE Loss Function Pos Weights: {self.loss_fn.pos_weight}")
@@ -119,43 +123,56 @@ class Trainer:
                 f"Epoch {epoch+1} complete. Final Avg Loss for this epoch: {epoch_average_loss}"
             )  # average loss across all batches
 
-            if validation_loss_checker.training_should_stop(self.model):
+            if validation_metric_checker.training_should_stop(self.model):
                 print(f"NOT ENOUGH IMPROVEMENT FOUND, STOPPING TRAINING")
-                validation_ap = validation_loss_checker.current_metrics
-                write_train_loss_to_file(epoch_list, train_losses, validation_ap)
+                validation_ap = validation_metric_checker.current_metrics
+                write_train_loss_to_file(
+                    epoch_list,
+                    train_losses,
+                    validation_ap,
+                    loss_file_path=self.loss_filepath,
+                )
 
                 # load model and calculate + save thresholds
                 self.model = torch.load(
-                    MODEL_ROOT / f"{MODEL_NAME}.pt",
+                    self.model_path,
                     weights_only=False,
                     map_location=self.device,
                 )
+
+                threshold_filepath = self.path_holder.model_root / "thresholds.json"
                 if self.threshold == "optimal":
-                    thresholds = validation_loss_checker.calculate_optimal_threshold(
+                    thresholds = validation_metric_checker.calculate_optimal_threshold(
                         self.model
                     )
                     threshold_dict = {"thresholds": thresholds}
-                    with open(MODEL_ROOT / "thresholds.json", "w") as threshold_file:
+                    with open(threshold_filepath, "w") as threshold_file:
                         json.dump(threshold_dict, threshold_file)
 
-                return (train_losses, validation_ap, epoch_list)
+                return
 
-        save_model(self.model)
-        validation_ap = validation_loss_checker.current_metrics
-        write_train_loss_to_file(epoch_list, train_losses, validation_ap)
+        save_model(self.model, self.model_path)
+        validation_ap = validation_metric_checker.current_metrics
+
+        write_train_loss_to_file(
+            epoch_list, train_losses, validation_ap, loss_file_path=self.loss_filepath
+        )
 
         # if training never stops still have to load the best model which may not be the latest one
         self.model = torch.load(
-            MODEL_ROOT / f"{MODEL_NAME}.pt",
+            self.model_path,
             weights_only=False,
             map_location=self.device,
         )
         if self.threshold == "optimal":
-            thresholds = validation_loss_checker.calculate_optimal_threshold(self.model)
+            thresholds = validation_metric_checker.calculate_optimal_threshold(
+                self.model
+            )
+            threshold_filepath = self.path_holder.model_root / "thresholds.json"
             threshold_dict = {"thresholds": thresholds}
-            with open(MODEL_ROOT / "thresholds.json", "w") as threshold_file:
+            with open(threshold_filepath, "w") as threshold_file:
                 json.dump(threshold_dict, threshold_file)
 
         print(f"training completed")
 
-        return (train_losses, validation_ap, epoch_list)
+        return

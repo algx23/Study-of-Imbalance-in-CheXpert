@@ -2,8 +2,6 @@
 things that do not change - ie labels, num epochs, the name
 """
 
-from experiment_utils.arg_parser import parse_arguments
-
 LABELS = [
     "No Finding",
     "Enlarged Cardiomediastinum",
@@ -20,13 +18,20 @@ LABELS = [
     "Fracture",
 ]
 
-MODEL_NAME, *VARS_FOR_EXPERIMENT = parse_arguments()
 
-NUM_EPOCHS = 100
+NUM_EPOCHS = 1
 CHEXPERT_COMP_LABELS = [
     "Atelectasis",
     "Cardiomegaly",
     "Consolidation",
     "Edema",
     "Pleural Effusion",
+]
+RARE_CHEXPERT_LABELS = [
+    "Fracture",
+    "Pleural Other",
+    "Pneumothorax",
+    "Lung Lesion",
+    "Enlarged Cardiomediastinum",
+    "Pneumonia",
 ]

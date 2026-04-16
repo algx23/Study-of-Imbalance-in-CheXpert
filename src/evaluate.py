@@ -1,16 +1,14 @@
-from constants.paths import EVAL_DATA_PATH
 from constants.control_variables import LABELS
 import pandas as pd
 import torch
 from pathlib import Path
-from metric_calculator import MetricCalculator
 import numpy as np
 
 
 class EvaluationLoop:
     """The Evaluation loop to test the performance of all models, and generate metrics for comparison"""
 
-    def __init__(self, test_loader, model, loss_fn):
+    def __init__(self, path_holder, test_loader, model, loss_fn):
         """Initialize the evaluation loop
 
         Args:
@@ -19,19 +17,16 @@ class EvaluationLoop:
             loss_fn (BCEWithLogitsLoss): the loss function to use
         """
 
+        self.path_holder = path_holder
         self.test_loader = test_loader
         self.model = model
         self.loss_fn = loss_fn
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-
     def evaluate_model(self, thresholds):
         """Evalues the model, saves logits and calculates metrics"""
         # save prediction/ground truth tensors to file for future logging
-        tensor_save_path = Path(f"{EVAL_DATA_PATH}/tensor_data")
-        tensor_save_path.mkdir(exist_ok=True, parents=True)
 
-        test_loss = 0
         all_labels_across_batches = []
         all_predictions_across_batches = []
         all_outputs = []
@@ -47,30 +42,45 @@ class EvaluationLoop:
                 labels = labels.to(self.device)
 
                 outputs = self.model(images)
-                all_outputs.extend(outputs.cpu().numpy())# needs to be moved to cpu on extending here because i save it later
+                all_outputs.extend(
+                    outputs.cpu().numpy()
+                )  # needs to be moved to cpu on appending here because i save it later
                 loss = self.loss_fn(outputs, labels)
                 print(f"evaluation loss for batch {i+1}: {loss.item()}")
                 probability = torch.sigmoid(outputs)
                 all_probabilities.extend(probability.cpu().numpy())
 
-                predictions = (probability > torch.tensor(thresholds).to(self.device)).int()
+                predictions = (
+                    probability > torch.tensor(thresholds).to(self.device)
+                ).int()
 
                 all_labels_across_batches.extend(labels.cpu().numpy())
                 all_predictions_across_batches.extend(predictions.cpu().numpy())
 
-        torch.save(all_labels_across_batches, f"{tensor_save_path}/truth_tensor.pt")
-        torch.save(
-            all_predictions_across_batches, f"{tensor_save_path}/prediction_tensor.pt"
+        predictions_save_path = (
+            self.path_holder.tensor_save_path / "prediction_tensor.pt"
         )
+
+        truth_label_save_path = self.path_holder.tensor_save_path / "true_labels.pt"
+
+        probability_save_path = (
+            self.path_holder.tensor_save_path / "probability_tensor.pt"
+        )
+
+        torch.save(
+            torch.tensor(all_labels_across_batches),
+            truth_label_save_path,
+        )
+        torch.save(
+            torch.tensor(all_predictions_across_batches),
+            predictions_save_path,
+        )
+
+        torch.save(torch.tensor(all_probabilities), probability_save_path)
 
         # saving the logits just in case
         logit_df = pd.DataFrame(all_outputs, columns=LABELS)
-        logit_df.to_csv(EVAL_DATA_PATH / "eval_logits.csv")
+        logit_df_path = self.path_holder.eval_data_path / "eval_logits.csv"
+        logit_df.to_csv(logit_df_path)
 
-        metric_calculator = MetricCalculator(
-            probabilities=all_probabilities,
-            predictions=all_predictions_across_batches,
-            truth=all_labels_across_batches,
-        )
-        metric_calculator.calculate_metrics()
         return

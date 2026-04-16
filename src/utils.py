@@ -4,8 +4,7 @@ import torch
 import matplotlib.pyplot as plt
 
 import pandas as pd
-from constants.control_variables import LABELS, MODEL_NAME
-from constants.paths import MODEL_ROOT, TRAIN_DATA_PATH
+from constants.control_variables import LABELS
 from pathlib import Path
 import csv
 
@@ -23,6 +22,7 @@ def calculate_mean_and_standard_deviation(dataloader, device):
 
     Returns: (mean: float, standard_deviation: float)
     """
+    print("Starting to Calculate Mean and Standard Deviation...")
     sum_pixel_vals = 0
     sum_pixel_vals_squared = 0
     batches_amount = len(dataloader)
@@ -48,12 +48,14 @@ def calculate_mean_and_standard_deviation(dataloader, device):
     variance = sum_pixel_vals_squared / batches_amount - mean**2  # E[X^2] on wikipedia
     standard_deviation = sqrt(variance)
 
-    # print(mean, standard_deviation)
+    print(
+        f"Finished Calculating Mean and Standard Deviation: Mean: {mean}, Standard Deviation: {standard_deviation}"
+    )
 
-    return (mean.item(), standard_deviation.item())
+    return (float(mean), float(standard_deviation))
 
 
-def plot_loss(training_losses, validation_ap, epochs):
+def plot_loss_ap(training_losses, validation_ap, epochs, save_path):
     """Plots the train and validatoin losses to a graph and saves them
 
     Args:
@@ -67,9 +69,10 @@ def plot_loss(training_losses, validation_ap, epochs):
     plt.ylabel("Average Loss / epoch")
     plt.xlabel("Number of epochs completed")
     plt.legend()
-    plt.title("Training and Validation Average Precision over epochs")
-    plt.savefig(f"{MODEL_ROOT}/{MODEL_NAME}_loss_graph.png")
+    plt.title("Training Loss and Validation Average Precision over epochs")
+    plt.savefig(save_path)
     plt.clf()
+    plt.close()
 
     return
 
@@ -96,17 +99,17 @@ def calculate_class_weights(train_file):
     return torch.tensor(class_weights)
 
 
-def save_model(model):
+def save_model(model, save_path):
     """Saves a model to the model path
 
     Args:
         model (BaselineModel): the model to be saved
     """
-    torch.save(model, f"{MODEL_ROOT}/{MODEL_NAME}.pt")
+    torch.save(model, save_path)
     return
 
 
-def write_train_loss_to_file(epoch_list, loss_to_plot, validation_ap):
+def write_train_loss_to_file(epoch_list, loss_to_plot, validation_ap, loss_file_path):
     """Write the train losses to a file
 
     Args:
@@ -114,11 +117,8 @@ def write_train_loss_to_file(epoch_list, loss_to_plot, validation_ap):
         loss_to_plot (List): list of train losses
         validation_ap (list): list of validation losses
     """
-    # add the losses to a file as logs
-    loss_file = f"{TRAIN_DATA_PATH}/avg_epoch_loss.csv"
-
     loss_headings = ["Epoch", "Train Loss", "Validation Average Precision"]
-    with open(loss_file, "w", newline="") as file:
+    with open(loss_file_path, "w", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(loss_headings)
         for epoch, train_loss, val_ap in zip(epoch_list, loss_to_plot, validation_ap):
@@ -143,44 +143,8 @@ def calculate_normalized_inverse_frequency_focal_loss(TRAIN_SET_PATH):
     return normalized_inverse_class_frequencies
 
 
-# def calculate_class_freq_cbfl(TRAIN_SET_PATH):
-#     # different to the paper
-#     # use n{y=1} for the beta weight so that the number of positives is what influences the overall weight
-#     # then i apply this to the entire loss, to weight the entire class - this should increase
-#     # the performance on the minority class in terms of recall
-#     class_frequencies = []
-#     df = pd.read_csv(TRAIN_SET_PATH)
-
-#     for label in LABELS:
-#         n_pos = df[label].sum()
-#         n_neg = df.shape[0] - n_pos
-
-#         class_frequencies.append([n_pos, n_neg])
-
-#     # (1-beta) / (1-beta^n_y)
-
-#     beta = 0.99
-#     beta_class_weights = []
-#     for pos_neg_pair in class_frequencies:
-#         pos_weight = (1 - beta) / (1 - beta ** pos_neg_pair[0])
-#         beta_class_weights.append(pos_weight)
-
-#     # normalize so that each pair of weights sum to 13
-#     # x_i' = x_i(N/Sum(x_n))
-#     print(f"beta_class frequencies {beta_class_weights}")
-#     normalized_beta_class_weights = []
-#     for pos_weight in beta_class_weights:
-#         normalized_weight = pos_weight * (13 / (sum(beta_class_weights)))
-#         normalized_beta_class_weights.append(normalized_weight)
-
-#     return torch.tensor(normalized_beta_class_weights)
-
-
 def calculate_class_freq_cbfl(TRAIN_SET_PATH):
-    # different to the paper
-    # use n{y=1} for the beta weight so that the number of positives is what influences the overall weight
-    # then i apply this to the entire loss, to weight the entire class - this should increase
-    # the performance on the minority class in terms of recall
+
     class_frequencies = []
     df = pd.read_csv(TRAIN_SET_PATH)
 

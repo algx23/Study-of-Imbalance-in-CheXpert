@@ -1,13 +1,11 @@
-import os
 import matplotlib.pyplot as plt
 import pandas as pd
-from constants.paths import COMPARISON_PATH
 from constants.control_variables import LABELS
 import numpy as np
 from pathlib import Path
 
 
-def generate_comparisons(path_to_results):
+def generate_comparisons(list_of_models, save_path):
     """Generates graphs comparing the F1 Score, Average Precision, and Recall for all trained models
 
     Args:
@@ -21,49 +19,43 @@ def generate_comparisons(path_to_results):
     for label in LABELS:
         per_class_metrics.update({label: {"recall": {}, "f1": {}, "ap": {}}})
 
-    model_names = os.listdir(path_to_results)
-
-    for model in model_names:
+    for path in list_of_models:
+        model = Path(path).name
         report = pd.read_csv(
-            f"{path_to_results}/{model}/evaluation/classification_report.csv",
+            path / "evaluation" / "classification_report.csv",
             index_col=0,
         )
-        print(report.index.tolist())
 
         macro_f1 = report.iloc[-3, -3]  # row macro avg and col f1-score
         macro_recall = report.iloc[-3, -4]
         macro_ap = report.iloc[-3, -1]
-        
-        
 
         all_f1_scores[model] = macro_f1
         all_recall[model] = macro_recall
         all_ap[model] = macro_ap
 
-
         # set the index so i can use loc[] to loop through the labels
-        report = report.set_index("Label") 
+        report = report.set_index("Label")
         for label in LABELS:
             label_recall = report.loc[label, "recall"]
             label_f1 = report.loc[label, "f1-score"]
             label_ap = report.loc[label, "Average Precision"]
-        # the dict structure would be like this:
-        # CLASS_LABEL: {Recall: {Model: 0.3, Model2: 0.3}}, {F1: {Model: 0, Model2: 0.9}}
+            # the dict structure would be like this:
+            # CLASS_LABEL: {Recall: {Model: 0.3, Model2: 0.3}}, {F1: {Model: 0, Model2: 0.9}}
             per_class_metrics[label]["recall"].update({model: label_recall})
             per_class_metrics[label]["f1"].update({model: label_f1})
             per_class_metrics[label]["ap"].update({model: label_ap})
 
-    compare_f1(all_f1_scores)
-    compare_recall(all_recall)
-    compare_avg_precision(all_ap)
+    compare_f1(all_f1_scores, save_path)
+    compare_recall(all_recall, save_path)
+    compare_avg_precision(all_ap, save_path)
 
-    print(per_class_metrics)
-    compare_per_class_recall_f1_ap(per_class_metrics)
+    compare_per_class_recall_f1_ap(per_class_metrics, save_path)
 
     return
 
 
-def compare_f1(all_f1_scores):
+def compare_f1(all_f1_scores, save_path_folder):
     """Creates a graph comparing macro average f1 score for each model
 
     Args:
@@ -74,21 +66,18 @@ def compare_f1(all_f1_scores):
     y_f1_scores = all_f1_scores.values()
 
     plt.clf()
-    plt.figure(figsize=(15,10))
+    plt.figure(figsize=(15, 10))
     plt.barh(x_model_names, y_f1_scores)
-    # add the number on top of the bar
-    # https://www.geeksforgeeks.org/python/adding-value-labels-on-a-matplotlib-bar-chart/
-    for i in range(len(x_model_names)):
-        plt.text(i, list(y_f1_scores)[i], round(list(y_f1_scores)[i], 5))
+
     plt.xlabel("Experiment Name")
     plt.ylabel("Macro F1 Score")
 
-    plt.savefig(COMPARISON_PATH / "F1_Scores.png")
+    plt.savefig(save_path_folder / "F1_Scores.svg")
     plt.close()
     return
 
 
-def compare_recall(all_recall):
+def compare_recall(all_recall, save_path_folder):
     """creates a graph of the recall values for all models from their classification reports
 
     Args:
@@ -97,21 +86,18 @@ def compare_recall(all_recall):
     x_model_names = all_recall.keys()
     y_recall = all_recall.values()
     plt.clf()
-    plt.figure(figsize=(15,10))
+    plt.figure(figsize=(15, 10))
     plt.barh(x_model_names, y_recall)
-    # add the number on top of the bar
-    # https://www.geeksforgeeks.org/python/adding-value-labels-on-a-matplotlib-bar-chart/
-    for i in range(len(x_model_names)):
-        plt.text(i, list(y_recall)[i], round(list(y_recall)[i], 5))
+
     plt.xlabel("Experiment Name")
     plt.ylabel("Macro Recall")
 
-    plt.savefig(COMPARISON_PATH / "Recall.png")
+    plt.savefig(save_path_folder / "Recall.svg")
     plt.close()
     return
 
 
-def compare_avg_precision(all_ap):
+def compare_avg_precision(all_ap, save_path_folder):
     """Creates a graph comparing average precision score for all models
 
     Args:
@@ -121,21 +107,20 @@ def compare_avg_precision(all_ap):
     y_ap = all_ap.values()
 
     plt.clf()
-    plt.figure(figsize=(15,10))
+    plt.figure(figsize=(15, 10))
     plt.barh(x_model_names, y_ap)
-    # add the number on top of the bar
-    # https://www.geeksforgeeks.org/python/adding-value-labels-on-a-matplotlib-bar-chart/
-    for i in range(len(x_model_names)):
-        plt.text(i, list(y_ap)[i], round(list(y_ap)[i], 5))
 
     plt.xlabel("Experiment Name")
     plt.ylabel("Macro Average Precision")
 
-    plt.savefig(COMPARISON_PATH / "Average_precision.png")
+    plt.savefig(save_path_folder / "Average_precision.svg")
     plt.close()
     return
 
-def compare_per_class_recall_f1_ap(per_class_metrics: dict[str, dict[str, float]]):
+
+def compare_per_class_recall_f1_ap(
+    per_class_metrics: dict[str, dict[str, float]], save_path_folder
+):
     """
     Compare the F1, Recall and Average Precision (PR-AUC) of given classes
     across the different models, and group the metrics per model - i.e. each
@@ -159,7 +144,7 @@ def compare_per_class_recall_f1_ap(per_class_metrics: dict[str, dict[str, float]
     print(per_class_metrics)
 
     # make the path if it exists already
-    per_class_save_path = COMPARISON_PATH / "per-class-comparison"
+    per_class_save_path = save_path_folder / "per-class-comparison"
 
     per_class_save_path.mkdir(exist_ok=True, parents=True)
 
@@ -170,16 +155,64 @@ def compare_per_class_recall_f1_ap(per_class_metrics: dict[str, dict[str, float]
         y_f1 = per_class_metrics[label]["f1"].values()
         y_ap = per_class_metrics[label]["ap"].values()
         plt.clf()
-        plt.figure(figsize=(30,15))
+        plt.figure(figsize=(30, 15))
         x_pos = np.arange(len(x_model_name))
-        width=0.2
-        plt.bar(x_pos-0.2, y_recall, width, color="blue")
+        width = 0.2
+        plt.bar(x_pos - 0.2, y_recall, width, color="blue")
         plt.bar(x_pos, y_f1, width, color="green")
-        plt.bar(x_pos+0.2, y_ap, width, color="yellow")
+        plt.bar(x_pos + 0.2, y_ap, width, color="yellow")
         plt.xticks(x_pos, x_model_name)
         plt.xlabel("Model Name")
         plt.ylabel("Score")
         plt.legend(["Recall", "F1 Score", "Average Precision"])
-        plt.savefig(per_class_save_path / f"{label}-comparison.png")
+        plt.savefig(per_class_save_path / f"{label}-comparison.svg")
         plt.close()
     return
+
+
+def main():
+    paths_to_models_to_compare = []
+    print(
+        "enter the full path for which you would like to compare models\nFor Example, C:/users/..results/model_a"
+    )
+    print(
+        "Press enter to add another model, leave the line empty and press enter if you've finished, or type quit to exit"
+    )
+    while True:
+        try:
+            print("Path to model folder : ")
+            model_path_input = str(input())
+
+            if model_path_input.strip() == "":
+                break
+
+            if model_path_input.strip() == "quit":
+                return
+            model_path = Path(model_path_input)
+            classification_report_exists = (
+                model_path / "evaluation" / "classification_report.csv"
+            ).exists()
+
+            if classification_report_exists:
+                paths_to_models_to_compare.append(model_path)
+            else:
+                print("The classification report needed for comparisons was not found")
+                print(
+                    "Please train the model using py main.py --name <model name> and come back to this script once evaluation completes"
+                )
+                print(
+                    "see py main.py --help for more information on flags for the pipeline"
+                )
+        except Exception as e:
+            print("Something unexpected happened.")
+            exit(1)
+
+    save_path = Path("comparisons")
+    save_path.mkdir(exist_ok=True, parents=True)
+    generate_comparisons(paths_to_models_to_compare, save_path)
+    print(f"Comparisons have been generated! See {save_path}")
+    return
+
+
+if __name__ == "__main__":
+    main()
