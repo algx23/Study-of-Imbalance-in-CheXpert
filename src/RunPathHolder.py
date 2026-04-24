@@ -25,6 +25,7 @@ class RunPathHolder:
         self.matrix_path = self.eval_data_path / "confusion matrices"
         self.comparison_path = self.experiment_root / "comparisons"
         self.tensor_save_path = self.eval_data_path / "tensor data"
+        self.csv_paths = self.experiment_root.parent / "data"
 
 
 def setup_folders(run_path_holder, csv_paths):
