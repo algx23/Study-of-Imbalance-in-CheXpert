@@ -111,7 +111,9 @@ class MetricCalculator:
             avg_precision_scores.append(ap)
 
         # add the average precisions to the classification report
-        report["Average Precision"] = pd.Series(avg_precision_scores)
+        report_df["Average Precision"] = pd.Series(
+            avg_precision_scores, index=report_df.index
+        )
 
         report_path = self.path_holder.eval_data_path / "classification_report.csv"
         report_df.to_csv(report_path)
@@ -178,9 +180,6 @@ class MetricCalculator:
         colour = plt.get_cmap("tab20")
 
         for i in range(len(LABELS)):
-            print(
-                f"Label: {LABELS[i]} | Unique Truth: {np.unique(self.truth[:, i])} | Sum: {self.truth[:, i].sum()}"
-            )
             if LABELS[i] in CHEXPERT_COMP_LABELS:
                 plt.figure(comp_pr_curve_fig.number)
                 precision, recall, thresholds = precision_recall_curve(
@@ -210,6 +209,7 @@ class MetricCalculator:
         plt.legend(bbox_to_anchor=(1.05, 1))
         plt_save_path = self.path_holder.eval_data_path / "pr_curve.svg"
         plt.savefig(plt_save_path, bbox_inches="tight")
+        plt.close(all_pr_curve_fig)
 
         # format+save the competition pr curve figure
         plt.figure(comp_pr_curve_fig.number)
@@ -219,6 +219,7 @@ class MetricCalculator:
 
         plt_save_path = self.path_holder.eval_data_path / "comp_pr_curve.svg"
         plt.savefig(plt_save_path, bbox_inches="tight")
+        plt.close(comp_pr_curve_fig)
 
         # format+save the low class pr curve figure
         plt.figure(low_count_pr_curve_fig.number)
@@ -228,7 +229,7 @@ class MetricCalculator:
 
         plt_save_path = self.path_holder.eval_data_path / "low-support-classess.svg"
         plt.savefig(plt_save_path, bbox_inches="tight")
-        plt.close()
+        plt.close(low_count_pr_curve_fig)
 
         return
 
@@ -238,6 +239,7 @@ class MetricCalculator:
         cooc_row_sum = co_occurance.sum(axis=1)
         normalized_cooc_row_sum = co_occurance / cooc_row_sum[:, np.newaxis]
 
+        plt.figure(figsize=(15, 15))
         sns.heatmap(
             normalized_cooc_row_sum,
             cmap="coolwarm",
@@ -261,6 +263,30 @@ class MetricCalculator:
         plt.close()
         return
 
+    def compute_probability_line_graph(self):
+        plt.figure(figsize=(10, 6))
+        for i in range(len(LABELS)):
+            label = LABELS[i]
+            if label == "Lung Lesion":
+                probability_for_label = self.probabilities[:, i]
+                plt.hist(x=probability_for_label, bins=50)
+                plt.axvline(
+                    x=np.mean(probability_for_label), linestyle="--", color="black"
+                )
+
+        plt.xlabel("Probability")
+        plt.ylabel("Number of samples")
+        plt.title(
+            f"Probability / Confidence distribution for {self.path_holder.model_name}"
+        )
+        plt.savefig(
+            self.path_holder.eval_data_path
+            / f"Probability Distribution {self.path_holder.model_name}.svg"
+        )
+        plt.close()
+
+        return
+
     def calculate_metrics(self):
         """entry point to calculate all metrics"""
         self.plot_train_loss_and_val_prauc()
@@ -268,4 +294,5 @@ class MetricCalculator:
         self.create_per_class_confusion_matrices()
         self.plot_pr_curves()
         self.compute_co_occurance_matrix_between_prediction_and_truth()
+        self.compute_probability_line_graph()
         return
