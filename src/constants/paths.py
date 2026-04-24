@@ -5,8 +5,8 @@ will be saved
 from pathlib import Path
 
 
-# IMAGES_PATH = "/content/"
-IMAGES_PATH = "D:/dataset fyp/"
+IMAGES_PATH = "/content/"
+#IMAGES_PATH = "D:/dataset fyp/"
 
 # paths for saving things
 CSV_PATHS = Path(f"data/")

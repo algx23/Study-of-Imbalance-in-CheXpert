@@ -19,7 +19,7 @@ LABELS = [
 ]
 
 
-NUM_EPOCHS = 1
+NUM_EPOCHS = 100
 CHEXPERT_COMP_LABELS = [
     "Atelectasis",
     "Cardiomegaly",
