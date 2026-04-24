@@ -3,9 +3,11 @@ import pandas as pd
 from constants.control_variables import LABELS
 import numpy as np
 from pathlib import Path
+from experiment_utils.arg_parser import parse_arguments
+from RunPathHolder import RunPathHolder
 
 
-def generate_comparisons(list_of_models, save_path):
+def generate_comparisons(path_holder, save_path):
     """Generates graphs comparing the F1 Score, Average Precision, and Recall for all trained models
 
     Args:
@@ -19,32 +21,38 @@ def generate_comparisons(list_of_models, save_path):
     for label in LABELS:
         per_class_metrics.update({label: {"recall": {}, "f1": {}, "ap": {}}})
 
-    for path in list_of_models:
-        model = Path(path).name
+    # save_path = path_holder.comparison_path
+    for model_dir in path_holder.experiment_root.iterdir():
+        if model_dir.name == path_holder.comparison_path.name:
+            continue
+        model_dir_path_holder = RunPathHolder(
+            experiment_name=path_holder.experiment_root, model_name=model_dir.name
+        )
+        model_name = model_dir_path_holder.model_name
         report = pd.read_csv(
-            path / "evaluation" / "classification_report.csv",
+            model_dir_path_holder.eval_data_path / "classification_report.csv",
             index_col=0,
         )
 
-        macro_f1 = report.iloc[-3, -3]  # row macro avg and col f1-score
-        macro_recall = report.iloc[-3, -4]
-        macro_ap = report.iloc[-3, -1]
+        macro_f1 = report.loc["macro avg","f1-score"]  # row macro avg and col f1-score
+        macro_recall = report.loc["macro avg", "recall"]
+        macro_ap = report.loc["macro avg", "Average Precision"]
 
-        all_f1_scores[model] = macro_f1
-        all_recall[model] = macro_recall
-        all_ap[model] = macro_ap
+        all_f1_scores[model_name] = macro_f1
+        all_recall[model_name] = macro_recall
+        all_ap[model_name] = macro_ap
 
         # set the index so i can use loc[] to loop through the labels
-        report = report.set_index("Label")
+        # report = report.set_index("Label")
         for label in LABELS:
             label_recall = report.loc[label, "recall"]
             label_f1 = report.loc[label, "f1-score"]
             label_ap = report.loc[label, "Average Precision"]
             # the dict structure would be like this:
             # CLASS_LABEL: {Recall: {Model: 0.3, Model2: 0.3}}, {F1: {Model: 0, Model2: 0.9}}
-            per_class_metrics[label]["recall"].update({model: label_recall})
-            per_class_metrics[label]["f1"].update({model: label_f1})
-            per_class_metrics[label]["ap"].update({model: label_ap})
+            per_class_metrics[label]["recall"].update({model_name: label_recall})
+            per_class_metrics[label]["f1"].update({model_name: label_f1})
+            per_class_metrics[label]["ap"].update({model_name: label_ap})
 
     compare_f1(all_f1_scores, save_path)
     compare_recall(all_recall, save_path)
@@ -155,61 +163,27 @@ def compare_per_class_recall_f1_ap(
         y_f1 = per_class_metrics[label]["f1"].values()
         y_ap = per_class_metrics[label]["ap"].values()
         plt.clf()
-        plt.figure(figsize=(30, 15))
+        plt.figure(figsize=(20, 10))
         x_pos = np.arange(len(x_model_name))
         width = 0.2
         plt.bar(x_pos - 0.2, y_recall, width, color="blue")
         plt.bar(x_pos, y_f1, width, color="green")
         plt.bar(x_pos + 0.2, y_ap, width, color="yellow")
-        plt.xticks(x_pos, x_model_name)
-        plt.xlabel("Model Name")
+        plt.xticks(x_pos, x_model_name, fontsize=12, rotation=90)
+        plt.xlabel("Model Name", fontsize=15)
         plt.ylabel("Score")
         plt.legend(["Recall", "F1 Score", "Average Precision"])
         plt.savefig(per_class_save_path / f"{label}-comparison.svg")
+        plt.tight_layout()
         plt.close()
     return
 
 
 def main():
-    paths_to_models_to_compare = []
-    print(
-        "enter the full path for which you would like to compare models\nFor Example, C:/users/..results/model_a"
-    )
-    print(
-        "Press enter to add another model, leave the line empty and press enter if you've finished, or type quit to exit"
-    )
-    while True:
-        try:
-            print("Path to model folder : ")
-            model_path_input = str(input())
-
-            if model_path_input.strip() == "":
-                break
-
-            if model_path_input.strip() == "quit":
-                return
-            model_path = Path(model_path_input)
-            classification_report_exists = (
-                model_path / "evaluation" / "classification_report.csv"
-            ).exists()
-
-            if classification_report_exists:
-                paths_to_models_to_compare.append(model_path)
-            else:
-                print("The classification report needed for comparisons was not found")
-                print(
-                    "Please train the model using py main.py --name <model name> and come back to this script once evaluation completes"
-                )
-                print(
-                    "see py main.py --help for more information on flags for the pipeline"
-                )
-        except Exception as e:
-            print("Something unexpected happened.")
-            exit(1)
-
-    save_path = Path("comparisons")
-    save_path.mkdir(exist_ok=True, parents=True)
-    generate_comparisons(paths_to_models_to_compare, save_path)
+    experiment_root, model_name, *_ = parse_arguments()
+    path_holder = RunPathHolder(experiment_name=experiment_root, model_name=model_name)
+    save_path = path_holder.comparison_path
+    generate_comparisons(path_holder, save_path)
     print(f"Comparisons have been generated! See {save_path}")
     return
 
