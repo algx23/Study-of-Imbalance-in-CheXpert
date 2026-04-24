@@ -41,8 +41,8 @@ class DataSubsetter:
 
         # replace the blank columns for each disease with 0s
         df[self.LABELS] = df[self.LABELS].fillna(0)
-        # replace -1 uncertain values with 0 - negative
-        df[self.LABELS] = df[self.LABELS].replace(-1, 0)
+        # replace -1 uncertain values with 1 - positive - cannot rule out a pathology
+        df[self.LABELS] = df[self.LABELS].replace(-1, 1)
 
         # drop lateral images for simplicity - in future experiments will compare all views
         df = df.drop(df[df["Frontal/Lateral"] == "Lateral"].index)
