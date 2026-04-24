@@ -32,6 +32,7 @@ class EvaluationLoop:
         all_outputs = []
         all_probabilities = []
 
+        self.model.to(self.device)
         self.model.eval()
 
         print(f"thresholds used : {thresholds}")
