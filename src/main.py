@@ -35,13 +35,16 @@ from custom_loss_fns.focal_loss import FocalLoss
 from custom_loss_fns.class_balanced_focal_loss import ClassBalancedFocalLoss
 import json
 import numpy as np
+import random
 
 
 def make_reproducible():
     # setting random seeds for reproducibility
+    random.seed(23)
     np.random.seed(23)
     torch.manual_seed(23)
-    torch.use_deterministic_algorithms(True)
+    torch.cuda.manual_seed(23)
+    torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
 
@@ -92,7 +95,7 @@ def check_data_exists(
 
     subsetter.calculate_natural_label_coocurrance()
     subsetter.calculate_patient_overlap()
-    subsetter.plot_imbalance()
+    subsetter.plot_imbalance(run_specific_paths)
 
 
 def get_loss_function(use_weights, focal_loss_gamma, use_cbfl):
@@ -102,9 +105,9 @@ def get_loss_function(use_weights, focal_loss_gamma, use_cbfl):
         class_weights = class_weights.to(device)
 
     if focal_loss_gamma is not None:
-        alpha = calculate_normalized_inverse_frequency_focal_loss(TRAIN_SET_PATH)
-        print(f"alpha shape : {alpha.size()}")
-        alpha = alpha.to(device)
+        # trying alpha = 0.25 from the paper
+        alpha = 0.25
+        # alpha = alpha.to(device)
         gamma = focal_loss_gamma  # as recommended by the paper
         loss_fn = FocalLoss(alpha, gamma)
     elif use_cbfl:
@@ -198,6 +201,7 @@ if __name__ == "__main__":
             threshold=threshold,
         )
         trainer.train_model()
+        model = torch.load(model_path, weights_only=False, map_location=device)
 
     else:
         print("previous models found!")
@@ -207,6 +211,8 @@ if __name__ == "__main__":
     print(model)
 
     print("EVALUATION STARTING")
+
+    make_reproducible()
     eval_loop = EvaluationLoop(
         run_specific_paths, data_loader_for_testing, model, loss_fn
     )
