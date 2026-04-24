@@ -64,15 +64,23 @@ def plot_loss_ap(training_losses, validation_ap, epochs, save_path):
         epochs (list): list of epoch numbers
     """
 
-    plt.plot(epochs, training_losses, label="Training Loss")
-    plt.plot(epochs, validation_ap, label="Validation Average Precision")
-    plt.ylabel("Average Loss / epoch")
-    plt.xlabel("Number of epochs completed")
-    plt.legend()
-    plt.title("Training Loss and Validation Average Precision over epochs")
+    fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(14, 10))
+    ax[0].plot(epochs, training_losses, label="Training Loss")
+    ax[0].set_title("Training loss / epoch")
+    ax[0].set_ylabel("Loss")
+    ax[0].set_xlabel("Epoch")
+
+    ax[1].plot(
+        epochs, validation_ap, label="Validation Average Precision", color="orange"
+    )
+    ax[1].set_title("Validation Average Precision / epoch")
+    ax[1].set_ylabel("Average Precision")
+    ax[1].set_xlabel("Epoch")
+
+    plt.tight_layout()
     plt.savefig(save_path)
     plt.clf()
-    plt.close()
+    plt.close(fig)
 
     return
 
@@ -136,11 +144,11 @@ def calculate_normalized_inverse_frequency_focal_loss(TRAIN_SET_PATH):
 
     inverse_class_frequencies = torch.tensor(inverse_class_frequencies)
     print(f"pre normalized alpha: {inverse_class_frequencies}")
-    normalized_inverse_class_frequencies = inverse_class_frequencies / torch.sum(
-        inverse_class_frequencies
-    )
+    #normalized_inverse_class_frequencies = inverse_class_frequencies / torch.sum(
+    #   inverse_class_frequencies
+    #)
 
-    return normalized_inverse_class_frequencies
+    return inverse_class_frequencies
 
 
 def calculate_class_freq_cbfl(TRAIN_SET_PATH):

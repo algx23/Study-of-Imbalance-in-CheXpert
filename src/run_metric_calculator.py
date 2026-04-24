@@ -20,8 +20,6 @@ if __name__ == "__main__":
     all_probability = torch.load(probability_tensor_path)
     all_prediction = torch.load(prediction_tensor_path)
 
-    print(all_truth.size(), all_probability.size(), all_prediction.size())
-
     metric_calculator = MetricCalculator(
         path_holder=path_holder,
         truth=all_truth,
