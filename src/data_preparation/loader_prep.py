@@ -53,6 +53,9 @@ def prepare_data(
         TRAIN_SET_PATH, IMAGES_PATH, transform=calc_transforms
     )
 
+    # set generator so the shuffling is the same
+    generator = torch.Generator()
+    generator.manual_seed(23)
     calc_loader = DataLoader(calc_train_dataset, batch_size=25, shuffle=True)
 
     if os.path.exists(MEAN_STD_PATH):
@@ -96,14 +99,20 @@ def prepare_data(
         TRAIN_SET_PATH, IMAGES_PATH, transform=train_transforms, use_clahe=use_clahe
     )
     after_normalization_train_loader = DataLoader(
-        after_normalization_train_dataset, batch_size=25, shuffle=True
+        after_normalization_train_dataset,
+        batch_size=25,
+        shuffle=True,
+        generator=generator,
     )
 
     after_normalization_validation_dataset = ChexpertDataset(
         VALIDATION_SET_PATH, IMAGES_PATH, transform=transforms
     )
     after_normalization_validation_loader = DataLoader(
-        after_normalization_validation_dataset, batch_size=25, shuffle=False
+        after_normalization_validation_dataset,
+        batch_size=25,
+        shuffle=False,
+        generator=generator,
     )
 
     # checking the after normalization dataset
@@ -137,14 +146,12 @@ def prepare_test_data(TEST_SET_PATH):
     Returns:
         DataLoader: the test dataloader
     """
+
+    generator = torch.Generator()
+    generator.manual_seed(23)
     resize_transform = Resize(
         (224, 224)
     )  # some images are different sizes so resize them all to the same size
-    test_dataset = ChexpertDataset(
-        TEST_SET_PATH, IMAGES_PATH, transform=resize_transform
-    )
-
-    test_dataset_loader = DataLoader(test_dataset, batch_size=25, shuffle=False)
 
     with open(MEAN_STD_PATH, "r") as f:
         mean_std_data = json.load(f)
@@ -160,7 +167,10 @@ def prepare_test_data(TEST_SET_PATH):
         TEST_SET_PATH, IMAGES_PATH, transform=transforms
     )
     after_normalization_test_loader = DataLoader(
-        after_normalization_test_dataset, batch_size=25, shuffle=False
+        after_normalization_test_dataset,
+        batch_size=25,
+        shuffle=False,
+        generator=generator,
     )
 
     return after_normalization_test_loader
