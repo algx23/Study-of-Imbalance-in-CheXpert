@@ -257,6 +257,7 @@ class DataSubsetter:
         plt.barh(x + width, test_imbalance, width, label="Test set")
         plt.xlabel("Proportion of class in set (%)")
         plt.ylabel("Class")
+        plt.yticks(x, self.LABELS)
         plt.legend()
         plt.tight_layout()
         plt.savefig(path_holder.csv_paths / "imbalance ratio.svg")

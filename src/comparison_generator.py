@@ -163,7 +163,7 @@ def compare_per_class_recall_f1_ap(
         y_f1 = per_class_metrics[label]["f1"].values()
         y_ap = per_class_metrics[label]["ap"].values()
         plt.clf()
-        plt.figure(figsize=(20, 10))
+        plt.figure(figsize=(25, 15))
         x_pos = np.arange(len(x_model_name))
         width = 0.2
         plt.bar(x_pos - 0.2, y_recall, width, color="blue")

@@ -30,7 +30,7 @@ class FocalLoss(nn.Module):
         p_t = 1-p if y=0
         FL(x) = (-alpha(1-p_t)^gamma) * log(p_t)
 
-        See Dissertation for full mathematical derviation -> TODO: Add to my dissertation
+        See Dissertation for full mathematical derviation (Appendix 2)
 
         Args:
         - batch: Tensor: the batch of images of which to calculate the loss

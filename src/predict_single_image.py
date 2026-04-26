@@ -1,12 +1,16 @@
 from pathlib import Path
 import torch
-from constants.control_variables import MODEL_NAME, LABELS
+from constants.control_variables import LABELS
 from torchvision.transforms import Resize, Normalize, Compose, ToTensor
 import cv2
 from PIL import Image
 from tabulate import *
 import os
 import json
+
+from constants.paths import TRAIN_SET_PATH
+from data_preparation.loader_prep import prepare_data
+from utils import calculate_mean_and_standard_deviation
 
 
 def prepare_image_for_classification(image_path):
@@ -32,8 +36,16 @@ def prepare_image_for_classification(image_path):
         # computed from a previous run - the norm const file contains the same values as it was computed on an earlier subset
         # but the difference is not that large, and since the mean/std is very similar whether it is calculated or not
         # this is the fallback - ideally i wouldve liked to have done all experiments with the calculated mean
-        mean = 0.5062857270240784
-        standard_deviation = 0.2867498937006307
+        if Path(TRAIN_SET_PATH).is_file():
+            train_dataloader = prepare_data(TRAIN_SET_PATH)
+            mean, standard_deviation = calculate_mean_and_standard_deviation(
+                train_dataloader, device
+            )
+        else:
+            print(
+                "The train dataset couldn't be found. Please make sure the CheXpert-V1-Small file is in the same location as this file. And that train.csv from the archive.zip is placed one directory above"
+            )
+            exit(1)
 
     TRANSFORMS = Compose(
         [Resize((224, 224)), ToTensor(), Normalize(mean, standard_deviation)]

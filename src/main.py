@@ -99,6 +99,7 @@ def check_data_exists(
 
 
 def get_loss_function(use_weights, focal_loss_gamma, use_cbfl):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     class_weights = calculate_class_weights(TRAIN_SET_PATH) if use_weights else None
     # cant move if it is none -> baseline
     if class_weights is not None:
