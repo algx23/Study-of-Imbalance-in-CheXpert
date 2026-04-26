@@ -133,6 +133,8 @@ def parse_arguments():
 
     threshold = args.threshold
 
+    parser.add_argument("--holdout", required=False, action="store_true", default=False)
+
     print(args)
     return (
         args.experiment_root,

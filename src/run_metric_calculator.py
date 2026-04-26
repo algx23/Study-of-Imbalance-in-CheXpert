@@ -6,9 +6,11 @@ from RunPathHolder import RunPathHolder
 from experiment_utils import arg_parser
 
 from metric_calculator import MetricCalculator
+import warnings
 
 
 if __name__ == "__main__":
+    warnings.filterwarnings("ignore")
     experiment_root, model_name, *_ = arg_parser.parse_arguments()
     path_holder = RunPathHolder(experiment_name=experiment_root, model_name=model_name)
 

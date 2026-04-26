@@ -239,7 +239,7 @@ class MetricCalculator:
         cooc_row_sum = co_occurance.sum(axis=1)
         normalized_cooc_row_sum = co_occurance / cooc_row_sum[:, np.newaxis]
 
-        plt.figure(figsize=(15, 15))
+        plt.figure(figsize=(20, 20))
         sns.heatmap(
             normalized_cooc_row_sum,
             cmap="coolwarm",
