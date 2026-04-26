@@ -7,16 +7,14 @@ from torchvision.transforms import (
 )
 import torch
 from PIL import Image
-from constants.control_variables import LABELS
 import json
 from pathlib import Path
-
+from constants.control_variables import LABELS
 import cv2
 
 import numpy as np
 
 import matplotlib.pyplot as plt
-from utils import calculate_mean_and_standard_deviation
 
 
 class GradCam:
@@ -52,7 +50,7 @@ class GradCam:
         self.model.to(self.device)
         self.model.eval()
         self.model.zero_grad()
-        image = Image.open(self.image_path)
+        image = Image.open(self.image_path).convert("L")
         image = self.transforms(image)
         image = image.unsqueeze(0)
         image = image.to(self.device)
@@ -111,11 +109,11 @@ class GradCam:
         )  # index of the category the model is most confident about
         best_class_idx = top_category_id[0].item()
         best_class = LABELS[best_class_idx]
-        self.save_heatmap(
+        heatmap_path = self.save_heatmap(
             upsampled_heatmap, self.image_path, self.model_name, best_class
         )
 
-        return
+        return heatmap_path
 
     def save_activations(self, module, input, output):
         self.activations.append(output.detach().cpu().numpy().squeeze())
@@ -126,7 +124,7 @@ class GradCam:
         return
 
     def save_heatmap(self, heatmap, image_path, model_name, best_class):
-        heatmap_folder = Path("heatmaps/") / model_name
+        heatmap_folder = Path("heatmaps/") / Path(model_name).stem
         heatmap_folder.mkdir(exist_ok=True, parents=True)
         heatmap_save_path = heatmap_folder / f"heatmap_top_prediction_{best_class}.png"
         plt.clf()
@@ -144,26 +142,35 @@ class GradCam:
 
         cv2.imwrite(heatmap_save_path, heatmap_on_img)
         print(f"Successfully saved heatmap to {heatmap_save_path}")
-        return
+        return str(Path(heatmap_save_path).resolve())
 
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-gc_model_path = input(
-    "Enter the path to the pt file of the model you would like to evaluate with GradCam \n"
-)
-image_path = input("Enter the path to the image you would like to run grad-cam on \n")
+if __name__ == "__main__":
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    gc_model_path = input(
+        "Enter the path to the pt file of the model you would like to evaluate with GradCam \n"
+    )
+    image_path = input(
+        "Enter the path to the image you would like to run grad-cam on \n"
+    )
 
-gc_model = torch.load(gc_model_path, weights_only=False)
-# get the model name
-# adapted from - https://stackoverflow.com/a/78066321
-# Posted by Jatinder Kumar
-# Retrieved 2026-04-05, License - CC BY-SA 4.0
-model_name = os.path.basename(os.path.dirname(gc_model_path))
+    gc_model = torch.load(gc_model_path, weights_only=False)
+    # get the model name
+    # adapted from - https://stackoverflow.com/a/78066321
+    # Posted by Jatinder Kumar
+    # Retrieved 2026-04-05, License - CC BY-SA 4.0
+    model_name = os.path.basename(os.path.dirname(gc_model_path))
 
-with open("norm_const.json", "r") as f:
-    mean_std_data = json.load(f)
-mean = mean_std_data["mean"]
-standard_deviation = mean_std_data["std"]
+    mean_std_file_path = "norm_const.json"
+    if os.path.exists(mean_std_file_path):
+        with open("norm_const.json", "r") as f:
+            mean_std_data = json.load(f)
+        mean = mean_std_data["mean"]
+        standard_deviation = mean_std_data["std"]
+    else:
+        print(
+            "Mean and Standard Deviation files are missing. Ensure the train set is properly installed and train a model to regenerate this."
+        )
 
-gradcam = GradCam(gc_model, model_name, image_path, mean, standard_deviation)
-gradcam.compute_gradcam_heatmap()
+    gradcam = GradCam(gc_model, model_name, image_path, mean, standard_deviation)
+    gradcam.compute_gradcam_heatmap()
