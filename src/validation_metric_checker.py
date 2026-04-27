@@ -16,6 +16,8 @@ class ValidationMetricCalculator:
     ):
         """Initialze the loss checker to check loss on validation set at the end of every epoch
 
+        Adapted from: https://medium.com/biased-algorithms/a-practical-guide-to-implementing-early-stopping-in-pytorch-for-model-training-99a7cbd46e9d
+
         Args:
             best_model_save_path (str): path to save the model with the best validation Average Precision to
             min_improvement (float): minimum reduction in validation loss to count as an improvement

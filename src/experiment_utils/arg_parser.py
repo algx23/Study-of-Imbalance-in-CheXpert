@@ -8,6 +8,15 @@ from torchvision.transforms import (
 
 
 def parse_arguments():
+    """Parse input flags to determine model configuration used in experiments
+
+    Raises:
+        ValueError: vflip argument is less than 0 or 1 - invalid
+        ValueError: hflip argument is less than 0 or 1 - invalid
+
+    Returns:
+        (tuple): tuple of experiment configuration settings
+    """
     augments_for_experiment = []
 
     parser = ArgumentParser()
@@ -133,9 +142,6 @@ def parse_arguments():
 
     threshold = args.threshold
 
-    parser.add_argument("--holdout", required=False, action="store_true", default=False)
-
-    print(args)
     return (
         args.experiment_root,
         args.name,

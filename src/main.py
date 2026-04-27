@@ -26,7 +26,6 @@ from model import BaselineModel
 from trainer import Trainer
 from utils import (
     calculate_class_weights,
-    calculate_normalized_inverse_frequency_focal_loss,
     calculate_class_freq_cbfl,
 )
 
@@ -122,14 +121,13 @@ def get_loss_function(use_weights, focal_loss_gamma, use_cbfl):
     """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     class_weights = calculate_class_weights(TRAIN_SET_PATH) if use_weights else None
-    # cant move if it is none -> baseline
+    # cant move device if it is none -> baseline
     if class_weights is not None:
         class_weights = class_weights.to(device)
 
     if focal_loss_gamma is not None:
         # trying alpha = 0.25 from the paper
         alpha = 0.25
-        # alpha = alpha.to(device)
         gamma = focal_loss_gamma  # as recommended by the paper
         loss_fn = FocalLoss(alpha, gamma)
     elif use_cbfl:

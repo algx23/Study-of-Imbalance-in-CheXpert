@@ -137,23 +137,6 @@ def write_train_loss_to_file(epoch_list, loss_to_plot, validation_ap, loss_file_
     return
 
 
-def calculate_normalized_inverse_frequency_focal_loss(TRAIN_SET_PATH):
-    # TODO: REMOVE
-    df = pd.read_csv(TRAIN_SET_PATH)
-    inverse_class_frequencies = []
-    for label in LABELS:
-        freq = df[label].sum()
-        inverse_class_frequencies.append(1 / freq)
-
-    inverse_class_frequencies = torch.tensor(inverse_class_frequencies)
-    print(f"pre normalized alpha: {inverse_class_frequencies}")
-    # normalized_inverse_class_frequencies = inverse_class_frequencies / torch.sum(
-    #   inverse_class_frequencies
-    # )
-
-    return inverse_class_frequencies
-
-
 def calculate_class_freq_cbfl(TRAIN_SET_PATH):
     """Calculate the class weights for Class Balanced Focal Loss based on the Effective Number of Samples
 
