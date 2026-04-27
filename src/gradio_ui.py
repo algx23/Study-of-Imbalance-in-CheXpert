@@ -53,7 +53,6 @@ def select_model():
         except Exception as e:
             print(f"ERROR: {e}")
 
-    print(models_available)
     return models_available
 
 
