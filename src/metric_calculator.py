@@ -37,6 +37,7 @@ class MetricCalculator:
         """initialize metric calculator
 
         Args:
+            path_holder (RunPathHolder): The path holder object for the model - holds the different paths for the model and is used to define the paths to which the visualizations get saved to
             probabilities (np array): the sigmoid of the logits from the model
             predictions (np array): binary 0,1 class predictions for each class
             truth (np array): binary 0,1 truth labels for each class/image
@@ -49,6 +50,7 @@ class MetricCalculator:
         return
 
     def plot_train_loss_and_val_prauc(self):
+        """Plots and saves a graph of the training loss, and validation average precision"""
         train_graph_path = (
             self.path_holder.train_data_path / "avg_train_loss_val_prauc_per_epoch.csv"
         )
@@ -70,7 +72,7 @@ class MetricCalculator:
         )
 
     def create_classification_report(self):
-        """generate classification report"""
+        """generate and save classification report"""
 
         report = classification_report(
             y_true=self.truth,
@@ -234,6 +236,7 @@ class MetricCalculator:
         return
 
     def compute_co_occurance_matrix_between_prediction_and_truth(self):
+        """Compute a Covariance matrix of the predictions, and truth labels for the model"""
         co_occurance = np.dot(np.array(self.truth).T, np.array(self.predictions))
         # normalize: https://stackoverflow.com/questions/8904694/how-to-normalize-a-2-dimensional-numpy-array-in-python-less-verbose
         cooc_row_sum = co_occurance.sum(axis=1)
@@ -264,6 +267,7 @@ class MetricCalculator:
         return
 
     def compute_probability_line_graph(self):
+        """Generate a confidence/probability distribution histogram for the lung lesion class"""
         plt.figure(figsize=(10, 6))
         for i in range(len(LABELS)):
             label = LABELS[i]

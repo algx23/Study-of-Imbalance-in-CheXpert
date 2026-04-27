@@ -12,9 +12,11 @@ class EvaluationLoop:
         """Initialize the evaluation loop
 
         Args:
+            path_holder (RunPathHolder): the path holder object holding the paths for the model, used to save tensor data
             test_loader (DataLoader): the dataloader on which to test
             model (BaselineModel): the model instance to test
             loss_fn (BCEWithLogitsLoss): the loss function to use
+            device (str): the device to which the model, images and labels are moved - either the CPU or GPU
         """
 
         self.path_holder = path_holder
@@ -24,7 +26,11 @@ class EvaluationLoop:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def evaluate_model(self, thresholds):
-        """Evalues the model, saves logits and calculates metrics"""
+        """Evalues the model, and saves logits, prediction, and truth label tensors
+
+        Args:
+            thresholds (list[float]): list of thresholds that define the boundary between a positive and negative prediction
+        """
         # save prediction/ground truth tensors to file for future logging
 
         all_labels_across_batches = []

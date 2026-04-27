@@ -25,6 +25,7 @@ class DataSubsetter:
             VALIDATION_SET_PATH (string): path to which the validation split csv will be saved
             TEST_SET_PATH (string): path to which the test split csv will be saved
             LABELS (List[String]): list of Label names to be used
+            CSV_PATHS: the folder to which to save the subsetted and split datasets
         """
         self.ORIGINAL_DATASET_PATH = ORIGINAL_DATASET_PATH
         self.TRAIN_SET_PATH = TRAIN_SET_PATH
@@ -174,6 +175,7 @@ class DataSubsetter:
         return
 
     def calculate_natural_label_coocurrance(self):
+        """Calculates the natural co-occurance of labels in the train set"""
         # from:https://stackoverflow.com/questions/20574257/constructing-a-co-occurrence-matrix-in-python-pandas
         train_set = pd.read_csv(self.TRAIN_SET_PATH)
         train_labels = train_set[self.LABELS]
@@ -208,6 +210,7 @@ class DataSubsetter:
         return
 
     def calculate_patient_overlap(self):
+        """Calculate the level of patient overlap between the train, validation and comparison test set"""
         train_set = pd.read_csv(self.TRAIN_SET_PATH)
         validation_set = pd.read_csv(self.VALIDATION_SET_PATH)
         test_set = pd.read_csv(self.TEST_SET_PATH)
@@ -239,6 +242,11 @@ class DataSubsetter:
         return
 
     def plot_imbalance(self, path_holder):
+        """Plot a graph of the class frequencies between the train, validation and comparison test set split
+
+        Args:
+            path_holder (RunPathHolder): the RunPathHolder object for the model - used to save the graph into the folder where the sets are
+        """
         train, val, test = (
             pd.read_csv(self.TRAIN_SET_PATH),
             pd.read_csv(self.VALIDATION_SET_PATH),

@@ -39,6 +39,7 @@ import random
 
 
 def make_reproducible():
+    """Sets random seeds for the experiment to ensure reproducibility"""
     # setting random seeds for reproducibility
     random.seed(23)
     np.random.seed(23)
@@ -56,6 +57,16 @@ def check_data_exists(
     LABELS,
     CSV_PATHS,
 ):
+    """Check whether the dataset paths exist, and create them if not, and calculate train set statistics
+
+    Args:
+        ORIGINAL_DATASET_PATH (str): Path to the full train.csv from the original, pre-split dataset
+        TRAIN_SET_PATH (str): path to the CSV containing the images and labels in the split train set
+        VALIDATION_SET_PATH (str): path to the CSV containing the images and labels in the split validation set
+        TEST_SET_PATH (str): path to the CSV containing the images and labels in the split comparison set
+        LABELS (list[str]): list of class labels
+        CSV_PATHS (Path): the parent folder of the split CSVs
+    """
 
     subsetter = DataSubsetter(
         ORIGINAL_DATASET_PATH,
@@ -99,6 +110,16 @@ def check_data_exists(
 
 
 def get_loss_function(use_weights, focal_loss_gamma, use_cbfl):
+    """Determine the loss function to use during training
+
+    Args:
+        use_weights (bool): If true, weighted binary cross entropy is used
+        focal_loss_gamma (int): value for the gamma parameter in focal loss - if None, focal loss is not used
+        use_cbfl (bool): if true, class balanced focal loss is used
+
+    Returns:
+        (BCEWithLogitsLoss | FocalLoss | ClassBalancedFocalLoss): the loss function object to use
+    """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     class_weights = calculate_class_weights(TRAIN_SET_PATH) if use_weights else None
     # cant move if it is none -> baseline

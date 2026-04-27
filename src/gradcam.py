@@ -28,6 +28,15 @@ class GradCam:
     """
 
     def __init__(self, model, model_name, image_path, mean, std):
+        """Initialize the gradcam class
+
+        Args:
+            model (BaselineModel): the model to run gradcam with
+            model_name (str): name of the model - used to save the heatmap
+            image_path (str): path to the image
+            mean (float): mean with which to normalize the image
+            std (float): standard deviation with which to normalize the image
+        """
         self.model = model
 
         self.mean = mean
@@ -47,6 +56,12 @@ class GradCam:
         return
 
     def compute_gradcam_heatmap(self):
+        """Compute the gradcam heatmap. We compare the activations and gradients to generate a heatmap
+        of where the model looked when classifying an image
+
+        Returns:
+            str: path to where hte heatmap is saved
+        """
         self.model.to(self.device)
         self.model.eval()
         self.model.zero_grad()
@@ -124,6 +139,17 @@ class GradCam:
         return
 
     def save_heatmap(self, heatmap, image_path, model_name, best_class):
+        """Save heatmap to file
+
+        Args:
+            heatmap (np array): heatmap to save
+            image_path (str): path to image
+            model_name (str): name of the model - used in heatmap save path to identify the model
+            best_class (str): name of the class which the model had the highest confidence for
+
+        Returns:
+            str: path to completed heatmap
+        """
         heatmap_folder = Path("heatmaps/") / Path(model_name).stem
         heatmap_folder.mkdir(exist_ok=True, parents=True)
         heatmap_save_path = heatmap_folder / f"heatmap_top_prediction_{best_class}.png"

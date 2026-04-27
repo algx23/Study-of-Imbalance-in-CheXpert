@@ -14,8 +14,7 @@ from utils import calculate_mean_and_standard_deviation
 
 
 def prepare_image_for_classification(image_path):
-    """Takes a path to an image and classifies it using an existing model,
-    specified by the --name parameter when running the file
+    """Takes a path to an image and classifies it using an existing model
 
     Args:
         image_path (string): path to image to classify
@@ -65,7 +64,13 @@ def prepare_image_for_classification(image_path):
 
 def make_classification(model, image, threshold, device):
     """Classifies a given image based on the chexpert labels
-    Args: image_path [str]: The file path of the image to be classified
+    Args:
+        model: The model used to classify the image
+        image: The image to be classified
+        threshold: the threshold used to determine a positive or negative prediction
+        device: the device to which the model, images and labels are moved (cpu or gpu)
+
+
 
     Returns: table showing labels, the classification and confidence label
     """

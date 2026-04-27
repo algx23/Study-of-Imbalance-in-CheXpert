@@ -1,3 +1,7 @@
+"""This calculates metrics, and creates visualizations using the saved evaluation tensors from main.py
+This file should be run after a model has been trained with main.py --name <name>
+"""
+
 from pathlib import Path
 
 import torch

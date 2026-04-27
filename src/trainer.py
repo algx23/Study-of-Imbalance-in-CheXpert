@@ -26,6 +26,7 @@ class Trainer:
         """Initialize the training loop
 
         Args:
+            path_holder (RunPathHolder): PathHolder object holding the paths for which training data will be saved for the model
             model (BaselineModel): the model to be rtained
             optimizer (Adam): Optimizer to use
             loss_fn (BCEWithLogitsLoss | FocalLoss): loss function to use
@@ -33,6 +34,9 @@ class Trainer:
             validation_loader (DataLoader): dataloader to compute validation loss for early stopping
             class_weights (Tensor): Tensor of class weights to be passed through when computing validation loss
             NUM_EPOCHS (int): max number of epochs to train
+            use_mixup (bool): Whether MixUp Augmentation is used or not
+            threshold ("fixed" | "optimal"): denotes whether fixed or optimal thersholds are used to calculate loss
+            device (str): the device the model, images and labels will be moved to
         """
         self.path_holder = path_holder
         self.model = model

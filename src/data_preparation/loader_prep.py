@@ -35,6 +35,7 @@ def prepare_data(
         IMAGES_PATH (string): file path to the images
         TRAIN_SET_PATH (string):path to train.csv -> the csv of images in the train set
         VALIDATION_SET_PATH (string): path to validation.csv -> the csv of images in the validation set
+        model_root_dir: model folder - to save the augmentation before and after image
 
     Returns:
         tuple(DataLoader): Returns the train, and validation dataloaders
@@ -177,6 +178,13 @@ def prepare_test_data(TEST_SET_PATH):
 
 
 def show_before_after_augments(before_dataloader, after_dataloader, model_root_dir):
+    """Generate and save an image showing the effect of augmentations before and after
+
+    Args:
+        before_dataloader (ChexpertDataset): dataset of images with no augmentations
+        after_dataloader (ChexpertDataset): dataset of images after augmentations have been applied
+        model_root_dir (Path): folder in which to save the augmentation before/after image
+    """
 
     fig, axis = plt.subplots(nrows=2, ncols=5, figsize=(15, 6))
 

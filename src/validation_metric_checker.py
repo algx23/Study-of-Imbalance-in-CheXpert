@@ -17,7 +17,8 @@ class ValidationMetricCalculator:
         """Initialze the loss checker to check loss on validation set at the end of every epoch
 
         Args:
-            min_improvement (flaot): minimum reduction in validation loss to count as an improvement
+            best_model_save_path (str): path to save the model with the best validation Average Precision to
+            min_improvement (float): minimum reduction in validation loss to count as an improvement
             epochs_to_wait (int): number of epochs where no improvement by the min_improvement is acceptable before training stops
             validation_loader (DataLoader): Dataloader of the validation set
             class_weights (Tensor): class weights for use in the loss function
@@ -44,7 +45,7 @@ class ValidationMetricCalculator:
             model (BaselineModel): The model to be validated
 
         Returns:
-            float: the average loss for the epoch
+            float: the validation average precision for the epoch
         """
         all_probabilities = []
         all_truth = []
@@ -119,6 +120,14 @@ class ValidationMetricCalculator:
         return self.stop_early
 
     def calculate_optimal_threshold(self, model):
+        """Calculates the Optimal Threshold of a model, by optimizing the F1 Score on the precision-recall curve
+
+        Args:
+            model (BaselineModel): the model to calculate optimal thresholds for
+
+        Returns:
+            list[float]: the list of optimal thresholds for each class
+        """
         all_probabilities = []
         all_truth = []
         all_predictions = []

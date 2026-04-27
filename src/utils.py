@@ -112,6 +112,7 @@ def save_model(model, save_path):
 
     Args:
         model (BaselineModel): the model to be saved
+        save_path: the path to save the model to
     """
     torch.save(model, save_path)
     return
@@ -124,6 +125,7 @@ def write_train_loss_to_file(epoch_list, loss_to_plot, validation_ap, loss_file_
         epoch_list (List): list of epoch numbers
         loss_to_plot (List): list of train losses
         validation_ap (list): list of validation losses
+        loss_file_path: the path to save the losses and AP to
     """
     loss_headings = ["Epoch", "Train Loss", "Validation Average Precision"]
     with open(loss_file_path, "w", newline="") as file:
@@ -136,6 +138,7 @@ def write_train_loss_to_file(epoch_list, loss_to_plot, validation_ap, loss_file_
 
 
 def calculate_normalized_inverse_frequency_focal_loss(TRAIN_SET_PATH):
+    # TODO: REMOVE
     df = pd.read_csv(TRAIN_SET_PATH)
     inverse_class_frequencies = []
     for label in LABELS:
@@ -144,14 +147,22 @@ def calculate_normalized_inverse_frequency_focal_loss(TRAIN_SET_PATH):
 
     inverse_class_frequencies = torch.tensor(inverse_class_frequencies)
     print(f"pre normalized alpha: {inverse_class_frequencies}")
-    #normalized_inverse_class_frequencies = inverse_class_frequencies / torch.sum(
+    # normalized_inverse_class_frequencies = inverse_class_frequencies / torch.sum(
     #   inverse_class_frequencies
-    #)
+    # )
 
     return inverse_class_frequencies
 
 
 def calculate_class_freq_cbfl(TRAIN_SET_PATH):
+    """Calculate the class weights for Class Balanced Focal Loss based on the Effective Number of Samples
+
+    Args:
+        TRAIN_SET_PATH (Path): The path of the train set to use to get frequencies
+
+    Returns:
+        Tensor: a tensor containing the class weights in the form[[pos_i, neg_i]] for each class i
+    """
 
     class_frequencies = []
     df = pd.read_csv(TRAIN_SET_PATH)
@@ -171,7 +182,7 @@ def calculate_class_freq_cbfl(TRAIN_SET_PATH):
         neg_weight = (1 - beta) / (1 - beta ** pos_neg_pair[1])
         beta_class_weights.append([pos_weight, neg_weight])
 
-    # normalize so that each pair of weights sum to 13
+    # normalize so that each pair of weights sum to 2 - in sigmoid multi-label becomes 13 binary choices
     # x_i' = x_i(N/Sum(x_n))
     print(f"beta_class frequencies {beta_class_weights}")
     normalized_beta_class_weights = []
