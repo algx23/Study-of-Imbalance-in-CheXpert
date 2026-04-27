@@ -205,4 +205,39 @@ perhaps due to focall loss forcing the model to learn more hard examples, and so
 - Initially I tested on the fracture class to see whether the logic was correct
 - I didn't do as much as I had hoped, but I am in a spot where the experiments will not take long to run, and the graphs generated will form the crux of my analysis
 
-=
+
+## Week 25 [w/c 16.3. 2026]
+- This week I worked on adding functions for a grouped comparison for all labels, changing the previous logic from fracture only, which was a test, to all labels
+- I also conducted initial test experiments for the Baseline at optimal thresholds
+
+## Week 26 [w/c 23.3.2026]
+- This week I did not manage to achieve many experiments, but did manage to conduct experiments on focal loss at the fixed threshold
+
+## Week 27 [w/c 30.3.2026]
+- This week, I addressed the feedback from the interview in february, implementing MixUp augmentation to be a part of the augmentation experiments
+- I also added a GradCam Visualization script, to look at where the model was looking, when classifying images a certain way
+
+## Week 28 [w/c 6.4.2026]
+- This week i changed some of the mean and standard deviation logic, making it be read from a file, rather than being hardcoded
+- Additionally, I had realized that I had not addressed the patient leakage problem which I had identified earlier, but also came to the realization that I would not have enough time to address it, and rerun experiments that I had already ran
+- For this reason, I created a function to calculate the proportion of patients that were leaked, so that I could mention it as a discussion point for my dissertation which I had started to plan, to show that I was aware of the limitation, even if I could not fix it with the time left
+- it was this week that I decided that I had so many experiments to do that I couldn't just run them on the CPU, so I decided to add device handling to ensure the models could run between CPUs and GPUs
+- This would allow me to use Google Colab rather than my laptop, making the experiments faster
+- I also realized that I misunderstood the Class-Balanced Focal Loss paper's summation of weights for nomralizing - I had initially summed to 13 but in a multi-label problem, each class has a binary one vs all so they sum to 2
+- Also i was only applying the weight to the positive class, rather than both
+
+## Week 29 [w/c 13.4.2026]
+- This week i worked on visualizations for my report
+- I used a different CMAP for the pr curves, so they would not repeat colours,
+- I also worked on improving the reproducibility of my results, by adding manual seeds, and ensuring the GPU used deterministic algorithms
+- I also refactored the code so that running the experiments, and getting the graphs were separate, to allow me to more easily change the graphs without needing to rerun evaluation
+
+## Week 30 [w/c 20.4.2026]
+- This week I committed some changes i made in the last week about the experiments
+- I had realized that I had too many experiments to do, and that even if i managed to do them, the report would likely not read as a coherent experimental setup, but just trying too many things
+- For this reason, i decided to change to a plan closer to what i planned in teh interim -> testing thresholds, then loss functions, then augmentations, then the architecture
+- I decided that since optimal thresholds were better, all the experiments after the fixed vs optimal runs with optimal
+
+## Week 31 [3/c 27.2026]
+- In this week, I made the final polishing touches on deadline day, including checking over my report, and polishing the gitrepo, updating the last parts of the project log using git commits to refresh my memory, and writing a README of instructions
+
